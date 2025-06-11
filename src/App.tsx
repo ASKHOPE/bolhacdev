@@ -20,6 +20,14 @@ import { Dashboard } from './pages/Dashboard'
 // Admin Pages
 import { AdminLayout } from './pages/admin/AdminLayout'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
+import { AdminUsers } from './pages/admin/AdminUsers'
+import { AdminEvents } from './pages/admin/AdminEvents'
+import { AdminDonations } from './pages/admin/AdminDonations'
+import { AdminAnalytics } from './pages/admin/AdminAnalytics'
+import { AdminContent } from './pages/admin/AdminContent'
+import { AdminSettings } from './pages/admin/AdminSettings'
+import { AdminContacts } from './pages/admin/AdminContacts'
+import { AdminNewsletter } from './pages/admin/AdminNewsletter'
 
 function App() {
   return (
@@ -27,22 +35,17 @@ function App() {
       <Router>
         <div className="min-h-screen flex flex-col">
           <Routes>
-            {/* Admin Routes */}
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
+            {/* Admin Routes - No protection for now */}
+            <Route path="/admin/*" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<div className="p-8">Users Management - Coming Soon</div>} />
-              <Route path="events" element={<div className="p-8">Events Management - Coming Soon</div>} />
-              <Route path="donations" element={<div className="p-8">Donations Management - Coming Soon</div>} />
-              <Route path="analytics" element={<div className="p-8">Analytics - Coming Soon</div>} />
-              <Route path="content" element={<div className="p-8">Content Management - Coming Soon</div>} />
-              <Route path="settings" element={<div className="p-8">Settings - Coming Soon</div>} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="donations" element={<AdminDonations />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="content" element={<AdminContent />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="contacts" element={<AdminContacts />} />
+              <Route path="newsletter" element={<AdminNewsletter />} />
             </Route>
 
             {/* Public Routes with Navbar and Footer */}

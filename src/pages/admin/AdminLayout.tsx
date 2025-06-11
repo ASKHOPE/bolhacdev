@@ -8,7 +8,9 @@ import {
   Heart, 
   BarChart3, 
   FileText,
-  ArrowLeft
+  ArrowLeft,
+  MessageSquare,
+  Mail
 } from 'lucide-react'
 
 export function AdminLayout() {
@@ -19,6 +21,8 @@ export function AdminLayout() {
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Events', href: '/admin/events', icon: Calendar },
     { name: 'Donations', href: '/admin/donations', icon: Heart },
+    { name: 'Contacts', href: '/admin/contacts', icon: MessageSquare },
+    { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Content', href: '/admin/content', icon: FileText },
     { name: 'Settings', href: '/admin/settings', icon: Settings },

@@ -46,6 +46,19 @@ export function Navbar() {
               </Link>
             ))}
             
+            {/* Admin Panel Link - Always visible for now */}
+            <Link
+              to="/admin"
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/admin')
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Admin Panel</span>
+            </Link>
+            
             {user ? (
               <div className="flex items-center space-x-4">
                 <Link
@@ -55,15 +68,6 @@ export function Navbar() {
                   <User className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Admin</span>
-                  </Link>
-                )}
                 <button
                   onClick={signOut}
                   className="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
@@ -119,6 +123,15 @@ export function Navbar() {
                 </Link>
               ))}
               
+              {/* Admin Panel Link - Mobile */}
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Panel
+              </Link>
+              
               {user ? (
                 <div className="space-y-1 pt-2 border-t">
                   <Link
@@ -128,15 +141,6 @@ export function Navbar() {
                   >
                     Dashboard
                   </Link>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Admin Panel
-                    </Link>
-                  )}
                   <button
                     onClick={() => {
                       signOut()
