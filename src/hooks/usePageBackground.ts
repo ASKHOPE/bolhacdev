@@ -32,8 +32,12 @@ export function usePageBackground() {
         .eq('key', `page_bg_${pageName}`)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching page background:', error)
+      if (error) {
+        // Only log errors that are not 'PGRST116' (no rows returned)
+        // PGRST116 is expected when a page background setting doesn't exist
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching page background:', error)
+        }
         setBackground(null)
       } else if (data) {
         console.log('Found background:', data.value)

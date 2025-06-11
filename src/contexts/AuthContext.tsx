@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      // First, sign up the user
+      // Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -119,18 +119,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
             
           if (profileError) throw profileError
-        }
-        
-        // Since we're bypassing email confirmation, let's set the user as confirmed
-        // This is a workaround for development purposes
-        if (!authData.session) {
-          // Manually sign in the user
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-          
-          if (signInError) throw signInError
         }
       }
       
