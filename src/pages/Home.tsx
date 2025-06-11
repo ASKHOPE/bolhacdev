@@ -51,10 +51,13 @@ export function Home() {
                 Explore Our Programs
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <button className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-600 transition-colors">
+              <Link
+                to="/donate"
+                className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-600 transition-colors"
+              >
                 Donate Now
                 <Heart className="ml-2 h-5 w-5" />
-              </button>
+              </Link>
             </div>
           </div>
         </div>

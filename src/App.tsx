@@ -11,6 +11,8 @@ import { About } from './pages/About'
 import { Programs } from './pages/Programs'
 import { Events } from './pages/Events'
 import { Contact } from './pages/Contact'
+import { Donate } from './pages/Donate'
+import { DonationSuccess } from './pages/DonationSuccess'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
@@ -56,6 +58,8 @@ function App() {
                       <Route path="/programs" element={<Programs />} />
                       <Route path="/events" element={<Events />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/donate" element={<Donate />} />
+                      <Route path="/donation-success" element={<DonationSuccess />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
                       <Route
