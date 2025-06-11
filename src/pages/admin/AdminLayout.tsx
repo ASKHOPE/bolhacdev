@@ -12,7 +12,8 @@ import {
   MessageSquare,
   Mail,
   FolderOpen,
-  Target
+  Target,
+  Palette
 } from 'lucide-react'
 
 export function AdminLayout() {
@@ -29,6 +30,7 @@ export function AdminLayout() {
     { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Content', href: '/admin/content', icon: FileText },
+    { name: 'Theme', href: '/admin/theme', icon: Palette },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ]
 

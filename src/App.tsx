@@ -1,7 +1,9 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { MaintenanceWrapper } from './components/MaintenanceWrapper'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 
@@ -31,64 +33,70 @@ import { AdminContacts } from './pages/admin/AdminContacts'
 import { AdminNewsletter } from './pages/admin/AdminNewsletter'
 import { AdminPrograms } from './pages/admin/AdminPrograms'
 import { AdminProjects } from './pages/admin/AdminProjects'
+import { AdminTheme } from './pages/admin/AdminTheme'
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <Routes>
-            {/* Admin Routes - No protection for now */}
-            <Route path="/admin/*" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="programs" element={<AdminPrograms />} />
-              <Route path="projects" element={<AdminProjects />} />
-              <Route path="events" element={<AdminEvents />} />
-              <Route path="donations" element={<AdminDonations />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="content" element={<AdminContent />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="contacts" element={<AdminContacts />} />
-              <Route path="newsletter" element={<AdminNewsletter />} />
-            </Route>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <MaintenanceWrapper>
+            <div className="min-h-screen flex flex-col">
+              <Routes>
+                {/* Admin Routes - No protection for now */}
+                <Route path="/admin/*" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="programs" element={<AdminPrograms />} />
+                  <Route path="projects" element={<AdminProjects />} />
+                  <Route path="events" element={<AdminEvents />} />
+                  <Route path="donations" element={<AdminDonations />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="content" element={<AdminContent />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="contacts" element={<AdminContacts />} />
+                  <Route path="newsletter" element={<AdminNewsletter />} />
+                  <Route path="theme" element={<AdminTheme />} />
+                </Route>
 
-            {/* Public Routes with Navbar and Footer */}
-            <Route
-              path="/*"
-              element={
-                <>
-                  <Navbar />
-                  <main className="flex-1">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/about" element={<About />} />
-                      <Route path="/programs" element={<Programs />} />
-                      <Route path="/programs/:programId" element={<ProgramDetail />} />
-                      <Route path="/events" element={<Events />} />
-                      <Route path="/contact" element={<Contact />} />
-                      <Route path="/donate" element={<Donate />} />
-                      <Route path="/donation-success" element={<DonationSuccess />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute>
-                            <Dashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                    </Routes>
-                  </main>
-                  <Footer />
-                </>
-              }
-            />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
+                {/* Public Routes with Navbar and Footer */}
+                <Route
+                  path="/*"
+                  element={
+                    <>
+                      <Navbar />
+                      <main className="flex-1">
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/programs" element={<Programs />} />
+                          <Route path="/programs/:programId" element={<ProgramDetail />} />
+                          <Route path="/events" element={<Events />} />
+                          <Route path="/contact" element={<Contact />} />
+                          <Route path="/donate" element={<Donate />} />
+                          <Route path="/donation-success" element={<DonationSuccess />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route
+                            path="/dashboard"
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                        </Routes>
+                      </main>
+                      <Footer />
+                    </>
+                  }
+                />
+              </Routes>
+            </div>
+          </MaintenanceWrapper>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 
