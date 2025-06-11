@@ -1,20 +1,25 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Users, Heart, Globe, Award } from 'lucide-react'
+import { ArrowRight, Users, Heart, Globe, Award, Calendar } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { useSiteStats } from '../hooks/useSiteStats'
+
+const iconMap = {
+  Users,
+  Heart,
+  Globe,
+  Award,
+  Calendar
+}
 
 export function Home() {
   const { getSetting } = useSiteSettings()
+  const { getStatsByPage, loading: statsLoading } = useSiteStats()
   
   const siteName = getSetting('site_name', 'HopeFoundation')
   const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
 
-  const stats = [
-    { icon: Users, label: 'People Helped', value: '50,000+' },
-    { icon: Globe, label: 'Countries', value: '25' },
-    { icon: Heart, label: 'Volunteers', value: '1,200+' },
-    { icon: Award, label: 'Projects Completed', value: '150+' },
-  ]
+  const homeStats = getStatsByPage('home')
 
   const programs = [
     {
@@ -71,17 +76,32 @@ export function Home() {
       {/* Stats Section */}
       <section className="py-16 bg-theme-surface transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center group">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-                  <stat.icon className="h-8 w-8" />
+          {statsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="text-center animate-pulse">
+                  <div className="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-4"></div>
+                  <div className="h-8 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
                 </div>
-                <div className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-2">{stat.value}</div>
-                <div className="text-theme-text-secondary transition-colors duration-300">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {homeStats.map((stat, index) => {
+                const IconComponent = iconMap[stat.icon as keyof typeof iconMap] || Users
+                return (
+                  <div key={stat.id} className="text-center group">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
+                      <IconComponent className="h-8 w-8" />
+                    </div>
+                    <div className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-2">{stat.value}</div>
+                    <div className="text-theme-text-secondary transition-colors duration-300">{stat.label}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 

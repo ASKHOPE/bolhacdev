@@ -29,6 +29,7 @@ export function AdminLayout() {
     { name: 'Contacts', href: '/admin/contacts', icon: MessageSquare },
     { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Stats', href: '/admin/stats', icon: BarChart3 },
     { name: 'Content', href: '/admin/content', icon: FileText },
     { name: 'Theme', href: '/admin/theme', icon: Palette },
     { name: 'Settings', href: '/admin/settings', icon: Settings },

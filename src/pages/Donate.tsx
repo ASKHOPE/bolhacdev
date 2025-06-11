@@ -537,24 +537,24 @@ export function Donate() {
                 </ul>
               </div>
 
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-theme p-8 border border-green-200 dark:border-green-900/30 transition-colors duration-300">
-                <h3 className="text-xl font-bold text-green-800 dark:text-green-300 transition-colors duration-300 mb-4">Recent Achievements</h3>
+              <div className="bg-theme-success/10 rounded-theme p-8 border border-theme-success/20 transition-colors duration-300">
+                <h3 className="text-xl font-bold text-theme-success transition-colors duration-300 mb-4">Recent Achievements</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">1,250</div>
-                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Children educated</div>
+                  <div className="text-center p-3 bg-theme-background rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-theme-success transition-colors duration-300">1,250</div>
+                    <div className="text-sm text-theme-text-secondary transition-colors duration-300">Children educated</div>
                   </div>
-                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">45</div>
-                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Wells built</div>
+                  <div className="text-center p-3 bg-theme-background rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-theme-success transition-colors duration-300">45</div>
+                    <div className="text-sm text-theme-text-secondary transition-colors duration-300">Wells built</div>
                   </div>
-                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">8,500</div>
-                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Medical treatments</div>
+                  <div className="text-center p-3 bg-theme-background rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-theme-success transition-colors duration-300">8,500</div>
+                    <div className="text-sm text-theme-text-secondary transition-colors duration-300">Medical treatments</div>
                   </div>
-                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">320</div>
-                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Homes built</div>
+                  <div className="text-center p-3 bg-theme-background rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-theme-success transition-colors duration-300">320</div>
+                    <div className="text-sm text-theme-text-secondary transition-colors duration-300">Homes built</div>
                   </div>
                 </div>
               </div>

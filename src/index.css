@@ -16,6 +16,8 @@
   --color-warning: #d97706;
   --color-error: #dc2626;
   --color-info: #0284c7;
+  --color-title: #ffffff;
+  --color-subtitle: #e0f2fe;
   --border-radius: 8px;
   --font-size-base: 16px;
   --font-family: Inter, system-ui, sans-serif;
@@ -73,6 +75,22 @@ body.has-page-background {
   background-color: var(--color-surface); 
   transition: background-color 0.3s ease;
 }
+.bg-theme-success { 
+  background-color: var(--color-success); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-warning { 
+  background-color: var(--color-warning); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-error { 
+  background-color: var(--color-error); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-info { 
+  background-color: var(--color-info); 
+  transition: background-color 0.3s ease;
+}
 
 .text-theme-primary { 
   color: var(--color-primary); 
@@ -92,6 +110,22 @@ body.has-page-background {
 }
 .text-theme-text-secondary { 
   color: var(--color-text-secondary); 
+  transition: color 0.3s ease;
+}
+.text-theme-success { 
+  color: var(--color-success); 
+  transition: color 0.3s ease;
+}
+.text-theme-warning { 
+  color: var(--color-warning); 
+  transition: color 0.3s ease;
+}
+.text-theme-error { 
+  color: var(--color-error); 
+  transition: color 0.3s ease;
+}
+.text-theme-info { 
+  color: var(--color-info); 
   transition: color 0.3s ease;
 }
 

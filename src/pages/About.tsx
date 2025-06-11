@@ -1,12 +1,23 @@
 import React from 'react'
 import { Users, Target, Award, Heart } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { useSiteStats } from '../hooks/useSiteStats'
+
+const iconMap = {
+  Users,
+  Target,
+  Award,
+  Heart
+}
 
 export function About() {
   const { getSetting } = useSiteSettings()
+  const { getStatsByPage, loading: statsLoading } = useSiteStats()
   
   const siteName = getSetting('site_name', 'HopeFoundation')
   const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
+
+  const aboutStats = getStatsByPage('about')
 
   const values = [
     {
@@ -83,16 +94,28 @@ export function About() {
                 their circumstances. Through our comprehensive programs and dedicated partnerships, 
                 we work to break cycles of poverty and build stronger, more resilient communities.
               </p>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="text-center p-4 theme-card transform hover:scale-105 transition-all duration-300">
-                  <div className="text-3xl font-bold text-theme-primary transition-colors duration-300 mb-2">15+</div>
-                  <div className="text-theme-text-secondary transition-colors duration-300">Years of Impact</div>
+              {statsLoading ? (
+                <div className="grid grid-cols-2 gap-6">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="text-center p-4 theme-card animate-pulse">
+                      <div className="h-8 bg-gray-300 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-300 rounded"></div>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-center p-4 theme-card transform hover:scale-105 transition-all duration-300">
-                  <div className="text-3xl font-bold text-theme-primary transition-colors duration-300 mb-2">25</div>
-                  <div className="text-theme-text-secondary transition-colors duration-300">Countries Served</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  {aboutStats.slice(0, 2).map((stat) => {
+                    const IconComponent = iconMap[stat.icon as keyof typeof iconMap] || Target
+                    return (
+                      <div key={stat.id} className="text-center p-4 theme-card transform hover:scale-105 transition-all duration-300">
+                        <div className="text-3xl font-bold text-theme-primary transition-colors duration-300 mb-2">{stat.value}</div>
+                        <div className="text-theme-text-secondary transition-colors duration-300">{stat.label}</div>
+                      </div>
+                    )
+                  })}
                 </div>
-              </div>
+              )}
             </div>
             <div className="overflow-hidden rounded-theme">
               <img

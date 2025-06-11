@@ -21,7 +21,9 @@ import {
   Layout,
   Layers,
   Image,
-  RefreshCw
+  RefreshCw,
+  Edit,
+  X
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { supabase } from '../../lib/supabase'
@@ -47,6 +49,7 @@ export function AdminTheme() {
     { page: 'contact', background: '#ffffff', description: 'Contact page background' }
   ])
   const [loadingBackgrounds, setLoadingBackgrounds] = useState(true)
+  const [editingTitleColors, setEditingTitleColors] = useState(false)
 
   const tabs = [
     { id: 'appearance', name: 'Appearance', icon: Palette },
@@ -342,6 +345,81 @@ export function AdminTheme() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Title and Subtitle Colors */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Hero Title & Subtitle Colors</h2>
+                <button
+                  onClick={() => setEditingTitleColors(!editingTitleColors)}
+                  className="flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  {editingTitleColors ? (
+                    <>
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit Colors
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {editingTitleColors ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Title Color
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={theme.titleColor}
+                        onChange={(e) => updateTheme({ titleColor: e.target.value })}
+                        className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={theme.titleColor}
+                        onChange={(e) => updateTheme({ titleColor: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Subtitle Color
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={theme.subtitleColor}
+                        onChange={(e) => updateTheme({ subtitleColor: e.target.value })}
+                        className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={theme.subtitleColor}
+                        onChange={(e) => updateTheme({ subtitleColor: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 bg-gradient-to-r from-theme-primary to-theme-accent rounded-lg">
+                  <h3 className="text-2xl font-bold mb-2" style={{ color: theme.titleColor }}>
+                    Hero Title Example
+                  </h3>
+                  <p className="text-lg" style={{ color: theme.subtitleColor }}>
+                    This is how your hero titles and subtitles will appear
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Color Palette */}

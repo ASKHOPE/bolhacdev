@@ -24,6 +24,8 @@ interface ThemeConfig {
   fontFamily: string
   animations: boolean
   shadows: boolean
+  titleColor: string
+  subtitleColor: string
 }
 
 interface MaintenanceConfig {
@@ -83,7 +85,9 @@ const defaultTheme: ThemeConfig = {
   fontSize: 'medium',
   fontFamily: 'Inter, system-ui, sans-serif',
   animations: true,
-  shadows: true
+  shadows: true,
+  titleColor: '#ffffff',
+  subtitleColor: '#e0f2fe'
 }
 
 const defaultMaintenance: MaintenanceConfig = {
@@ -131,7 +135,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           'theme_mode', 'theme_primary_color', 'theme_secondary_color', 'theme_accent_color',
           'theme_border_radius', 'theme_font_size', 'theme_font_family', 'theme_animations',
           'theme_shadows', 'theme_background', 'theme_surface', 'theme_text', 'theme_text_secondary',
-          'theme_border', 'theme_success', 'theme_warning', 'theme_error', 'theme_info'
+          'theme_border', 'theme_success', 'theme_warning', 'theme_error', 'theme_info',
+          'theme_title_color', 'theme_subtitle_color'
         ])
 
       if (error) throw error
@@ -161,7 +166,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         fontSize: (settings.theme_font_size as any) || defaultTheme.fontSize,
         fontFamily: settings.theme_font_family || defaultTheme.fontFamily,
         animations: settings.theme_animations !== 'false',
-        shadows: settings.theme_shadows !== 'false'
+        shadows: settings.theme_shadows !== 'false',
+        titleColor: settings.theme_title_color || defaultTheme.titleColor,
+        subtitleColor: settings.theme_subtitle_color || defaultTheme.subtitleColor
       }
 
       setTheme(loadedTheme)
@@ -234,6 +241,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--font-size-base', getFontSizeValue(theme.fontSize))
     root.style.setProperty('--font-family', theme.fontFamily)
     
+    // Apply title and subtitle colors
+    root.style.setProperty('--color-title', theme.titleColor)
+    root.style.setProperty('--color-subtitle', theme.subtitleColor)
+    
     // Apply theme class
     root.className = root.className.replace(/theme-\w+/g, '')
     
@@ -273,6 +284,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const updateTheme = async (updates: Partial<ThemeConfig>) => {
     const newTheme = { ...theme, ...updates }
+    if (updates.colors) {
+      newTheme.colors = { ...theme.colors, ...updates.colors }
+    }
     setTheme(newTheme)
     
     // Save to database
@@ -295,7 +309,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         { key: 'theme_font_size', value: newTheme.fontSize },
         { key: 'theme_font_family', value: newTheme.fontFamily },
         { key: 'theme_animations', value: newTheme.animations.toString() },
-        { key: 'theme_shadows', value: newTheme.shadows.toString() }
+        { key: 'theme_shadows', value: newTheme.shadows.toString() },
+        { key: 'theme_title_color', value: newTheme.titleColor },
+        { key: 'theme_subtitle_color', value: newTheme.subtitleColor }
       ]
 
       for (const setting of themeSettings) {

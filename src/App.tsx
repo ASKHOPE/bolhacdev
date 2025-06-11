@@ -35,6 +35,7 @@ import { AdminNewsletter } from './pages/admin/AdminNewsletter'
 import { AdminPrograms } from './pages/admin/AdminPrograms'
 import { AdminProjects } from './pages/admin/AdminProjects'
 import { AdminTheme } from './pages/admin/AdminTheme'
+import { AdminStats } from './pages/admin/AdminStats'
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
                   <Route path="events" element={<AdminEvents />} />
                   <Route path="donations" element={<AdminDonations />} />
                   <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="stats" element={<AdminStats />} />
                   <Route path="content" element={<AdminContent />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="contacts" element={<AdminContacts />} />

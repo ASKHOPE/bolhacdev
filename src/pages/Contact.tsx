@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Mail, Phone, MapPin, Send, Clock, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { useSiteStats } from '../hooks/useSiteStats'
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export function Contact() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const { getSetting } = useSiteSettings()
+  const { responseTimes, loading: responseTimesLoading } = useSiteStats()
 
   const contactEmail = getSetting('contact_email', 'info@hopefoundation.org')
   const contactPhone = getSetting('contact_phone', '+1 (555) 123-4567')
@@ -268,24 +270,25 @@ export function Contact() {
               {/* Response Time Info */}
               <div className="mt-8 p-6 bg-theme-surface border border-theme-border rounded-theme transition-colors duration-300">
                 <h3 className="text-lg font-semibold text-theme-text transition-colors duration-300 mb-3">Response Times</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-theme-text-secondary transition-colors duration-300">General Inquiries:</span>
-                    <span className="font-medium text-theme-text transition-colors duration-300">Within 24 hours</span>
+                {responseTimesLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex justify-between animate-pulse">
+                        <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                        <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-theme-text-secondary transition-colors duration-300">Volunteer Applications:</span>
-                    <span className="font-medium text-theme-text transition-colors duration-300">Within 48 hours</span>
+                ) : (
+                  <div className="space-y-2 text-sm">
+                    {responseTimes.map((responseTime) => (
+                      <div key={responseTime.id} className="flex justify-between">
+                        <span className="text-theme-text-secondary transition-colors duration-300">{responseTime.inquiry_type}:</span>
+                        <span className="font-medium text-theme-text transition-colors duration-300">{responseTime.response_time}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-theme-text-secondary transition-colors duration-300">Partnership Inquiries:</span>
-                    <span className="font-medium text-theme-text transition-colors duration-300">Within 3-5 business days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-theme-text-secondary transition-colors duration-300">Media Requests:</span>
-                    <span className="font-medium text-theme-text transition-colors duration-300">Within 24 hours</span>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Map Placeholder */}
