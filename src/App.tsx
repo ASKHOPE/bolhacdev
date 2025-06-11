@@ -9,6 +9,7 @@ import { Footer } from './components/Footer'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
 import { Programs } from './pages/Programs'
+import { ProgramDetail } from './pages/ProgramDetail'
 import { Events } from './pages/Events'
 import { Contact } from './pages/Contact'
 import { Donate } from './pages/Donate'
@@ -59,6 +60,7 @@ function App() {
                       <Route path="/" element={<Home />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/programs" element={<Programs />} />
+                      <Route path="/programs/:programId" element={<ProgramDetail />} />
                       <Route path="/events" element={<Events />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/donate" element={<Donate />} />

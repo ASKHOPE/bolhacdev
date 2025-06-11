@@ -1,9 +1,11 @@
 import React from 'react'
-import { BookOpen, Heart, Droplets, Home, Users, Lightbulb } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { BookOpen, Heart, Droplets, Home, Users, Lightbulb, ArrowRight } from 'lucide-react'
 
 export function Programs() {
   const programs = [
     {
+      id: 'education',
       icon: BookOpen,
       title: 'Education Initiative',
       description: 'Providing quality education and learning resources to underserved communities worldwide.',
@@ -15,8 +17,10 @@ export function Programs() {
         'Scholarship programs for underprivileged students',
         'Adult literacy programs for community development',
       ],
+      color: 'blue',
     },
     {
+      id: 'healthcare',
       icon: Heart,
       title: 'Healthcare Access',
       description: 'Ensuring basic healthcare services reach remote and marginalized communities.',
@@ -28,8 +32,10 @@ export function Programs() {
         'Maternal and child health programs',
         'Disease prevention and health education campaigns',
       ],
+      color: 'red',
     },
     {
+      id: 'clean-water',
       icon: Droplets,
       title: 'Clean Water Project',
       description: 'Building sustainable water systems and sanitation facilities for communities in need.',
@@ -41,8 +47,10 @@ export function Programs() {
         'Constructing sanitation systems',
         'Training communities in water system maintenance',
       ],
+      color: 'cyan',
     },
     {
+      id: 'housing',
       icon: Home,
       title: 'Housing Development',
       description: 'Providing safe, affordable housing solutions for families in crisis.',
@@ -54,8 +62,10 @@ export function Programs() {
         'Community-led construction training',
         'Sustainable building material sourcing',
       ],
+      color: 'green',
     },
     {
+      id: 'community-empowerment',
       icon: Users,
       title: 'Community Empowerment',
       description: 'Supporting local leadership and economic development initiatives.',
@@ -67,8 +77,10 @@ export function Programs() {
         'Cooperative development programs',
         'Women\'s empowerment initiatives',
       ],
+      color: 'purple',
     },
     {
+      id: 'innovation',
       icon: Lightbulb,
       title: 'Innovation Lab',
       description: 'Developing technology solutions for humanitarian challenges.',
@@ -80,8 +92,21 @@ export function Programs() {
         'Agricultural technology innovations',
         'Digital literacy programs',
       ],
+      color: 'yellow',
     },
   ]
+
+  const getColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-100 text-blue-600',
+      red: 'bg-red-100 text-red-600',
+      cyan: 'bg-cyan-100 text-cyan-600',
+      green: 'bg-green-100 text-green-600',
+      purple: 'bg-purple-100 text-purple-600',
+      yellow: 'bg-yellow-100 text-yellow-600',
+    }
+    return colors[color as keyof typeof colors] || 'bg-blue-100 text-blue-600'
+  }
 
   return (
     <div className="min-h-screen">
@@ -100,64 +125,80 @@ export function Programs() {
       {/* Programs Grid */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {programs.map((program, index) => (
               <div
                 key={index}
-                className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${
-                  index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''
-                }`}
+                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
               >
-                <div className={index % 2 === 1 ? 'lg:col-start-2' : ''}>
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-6">
-                    <program.icon className="h-8 w-8" />
+                <div className="relative">
+                  <img
+                    src={program.image}
+                    alt={program.title}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${getColorClasses(program.color)}`}>
+                      <program.icon className="h-6 w-6" />
+                    </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
                     {program.title}
-                  </h2>
-                  <p className="text-lg text-gray-600 mb-6">
+                  </h3>
+                  <p className="text-gray-600 mb-4">
                     {program.description}
                   </p>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                  <div className="grid grid-cols-3 gap-2 mb-6">
+                    <div className="text-center p-2 bg-gray-50 rounded">
+                      <div className="text-sm font-bold text-gray-900">
                         {program.stats.beneficiaries}
                       </div>
-                      <div className="text-sm text-gray-600">Beneficiaries</div>
+                      <div className="text-xs text-gray-600">Beneficiaries</div>
                     </div>
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-center p-2 bg-gray-50 rounded">
+                      <div className="text-sm font-bold text-gray-900">
                         {program.stats.locations}
                       </div>
-                      <div className="text-sm text-gray-600">Locations</div>
+                      <div className="text-xs text-gray-600">Locations</div>
                     </div>
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-center p-2 bg-gray-50 rounded">
+                      <div className="text-sm font-bold text-gray-900">
                         {program.stats.duration}
                       </div>
-                      <div className="text-sm text-gray-600">Active</div>
+                      <div className="text-xs text-gray-600">Active</div>
                     </div>
                   </div>
 
-                  {/* Details */}
-                  <ul className="space-y-2">
-                    {program.details.map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-start">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  {/* Key Features */}
+                  <ul className="space-y-1 mb-6">
+                    {program.details.slice(0, 2).map((detail, detailIndex) => (
+                      <li key={detailIndex} className="flex items-start text-sm">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-2 flex-shrink-0"></div>
                         <span className="text-gray-600">{detail}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
 
-                <div className={index % 2 === 1 ? 'lg:col-start-1 lg:row-start-1' : ''}>
-                  <img
-                    src={program.image}
-                    alt={program.title}
-                    className="rounded-lg shadow-lg w-full h-96 object-cover"
-                  />
+                  <div className="flex space-x-3">
+                    <Link
+                      to={`/programs/${program.id}`}
+                      className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      View Projects
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Link>
+                    <Link
+                      to={`/donate?program=${program.id}`}
+                      className="flex items-center justify-center px-4 py-2 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                    >
+                      <Heart className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -176,12 +217,18 @@ export function Programs() {
             Join us in creating sustainable change that lasts.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <Link
+              to="/donate"
+              className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Donate Now
-            </button>
-            <button className="px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
+            </Link>
+            <Link
+              to="/contact"
+              className="px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+            >
               Become a Volunteer
-            </button>
+            </Link>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
-import { Heart, CreditCard, Shield, Users, Target, Globe } from 'lucide-react'
+import { Heart, CreditCard, Shield, Users, Target, Globe, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -12,9 +13,24 @@ interface DonationFormData {
   donorEmail: string
   message: string
   isAnonymous: boolean
+  selectedProject: string
+  selectedProgram: string
+}
+
+interface Project {
+  id: string
+  title: string
+  description: string
+  location: string
+  target_amount: number
+  raised_amount: number
+  program_category: string
+  image_url: string
+  beneficiaries: number
 }
 
 export function Donate() {
+  const [searchParams] = useSearchParams()
   const [formData, setFormData] = useState<DonationFormData>({
     amount: '50',
     customAmount: '',
@@ -22,17 +38,143 @@ export function Donate() {
     donorEmail: '',
     message: '',
     isAnonymous: false,
+    selectedProject: searchParams.get('project') || '',
+    selectedProgram: searchParams.get('program') || '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [expandedPrograms, setExpandedPrograms] = useState<Set<string>>(new Set())
 
   const predefinedAmounts = ['25', '50', '100', '250', '500', 'custom']
+
+  // Sample projects data - in a real app, this would come from Supabase
+  const sampleProjects: Project[] = [
+    {
+      id: '1',
+      title: 'Rural School Construction in Kenya',
+      description: 'Building a new primary school to serve 300 children in a remote village.',
+      location: 'Nakuru County, Kenya',
+      target_amount: 50000,
+      raised_amount: 32000,
+      program_category: 'education',
+      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 300
+    },
+    {
+      id: '2',
+      title: 'Teacher Training Program - Bangladesh',
+      description: 'Comprehensive training for 50 local teachers to improve education quality.',
+      location: 'Sylhet Division, Bangladesh',
+      target_amount: 25000,
+      raised_amount: 18500,
+      program_category: 'education',
+      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 1500
+    },
+    {
+      id: '4',
+      title: 'Mobile Health Clinic - Uganda',
+      description: 'Deploying mobile health clinics to provide basic healthcare services.',
+      location: 'Gulu District, Uganda',
+      target_amount: 75000,
+      raised_amount: 45000,
+      program_category: 'healthcare',
+      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 5000
+    },
+    {
+      id: '5',
+      title: 'Maternal Health Program - India',
+      description: 'Training community health workers and providing essential supplies.',
+      location: 'Rajasthan, India',
+      target_amount: 40000,
+      raised_amount: 28000,
+      program_category: 'healthcare',
+      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 2000
+    },
+    {
+      id: '6',
+      title: 'Well Drilling Project - Mali',
+      description: 'Drilling 10 new wells to provide clean water access to rural communities.',
+      location: 'Sikasso Region, Mali',
+      target_amount: 60000,
+      raised_amount: 42000,
+      program_category: 'clean-water',
+      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 3000
+    },
+    {
+      id: '7',
+      title: 'Water Treatment Facility - Guatemala',
+      description: 'Building a community water treatment facility for safe drinking water.',
+      location: 'Quiché Department, Guatemala',
+      target_amount: 80000,
+      raised_amount: 55000,
+      program_category: 'clean-water',
+      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 1500
+    },
+    {
+      id: '8',
+      title: 'Disaster-Resistant Homes - Philippines',
+      description: 'Building typhoon-resistant homes for families affected by natural disasters.',
+      location: 'Leyte Province, Philippines',
+      target_amount: 100000,
+      raised_amount: 65000,
+      program_category: 'housing',
+      image_url: 'https://images.pexels.com/photos/8293778/pexels-photo-8293778.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 50
+    },
+    {
+      id: '9',
+      title: 'Women\'s Microfinance Program - Nepal',
+      description: 'Providing microloans and business training to women entrepreneurs.',
+      location: 'Sindhupalchok District, Nepal',
+      target_amount: 30000,
+      raised_amount: 22000,
+      program_category: 'community-empowerment',
+      image_url: 'https://images.pexels.com/photos/7551659/pexels-photo-7551659.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 100
+    },
+    {
+      id: '10',
+      title: 'Solar Power Initiative - Tanzania',
+      description: 'Installing solar power systems in rural schools and health centers.',
+      location: 'Mwanza Region, Tanzania',
+      target_amount: 45000,
+      raised_amount: 30000,
+      program_category: 'innovation',
+      image_url: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
+      beneficiaries: 800
+    }
+  ]
+
+  const programCategories = {
+    education: { title: 'Education Initiative', color: 'blue' },
+    healthcare: { title: 'Healthcare Access', color: 'red' },
+    'clean-water': { title: 'Clean Water Project', color: 'cyan' },
+    housing: { title: 'Housing Development', color: 'green' },
+    'community-empowerment': { title: 'Community Empowerment', color: 'purple' },
+    innovation: { title: 'Innovation Lab', color: 'yellow' }
+  }
+
+  useEffect(() => {
+    // In a real app, fetch projects from Supabase
+    setProjects(sampleProjects)
+    
+    // Auto-expand the selected program
+    if (formData.selectedProgram) {
+      setExpandedPrograms(new Set([formData.selectedProgram]))
+    }
+  }, [])
 
   const handleAmountChange = (amount: string) => {
     setFormData({ ...formData, amount, customAmount: amount === 'custom' ? formData.customAmount : '' })
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     setFormData({
       ...formData,
@@ -45,6 +187,24 @@ export function Donate() {
       return parseFloat(formData.customAmount) || 0
     }
     return parseFloat(formData.amount) || 0
+  }
+
+  const toggleProgramExpansion = (programId: string) => {
+    const newExpanded = new Set(expandedPrograms)
+    if (newExpanded.has(programId)) {
+      newExpanded.delete(programId)
+    } else {
+      newExpanded.add(programId)
+    }
+    setExpandedPrograms(newExpanded)
+  }
+
+  const getProgressPercentage = (raised: number, target: number) => {
+    return Math.min((raised / target) * 100, 100)
+  }
+
+  const getSelectedProjectDetails = () => {
+    return projects.find(p => p.id === formData.selectedProject)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,6 +239,8 @@ export function Donate() {
           donorName: formData.donorName,
           donorEmail: formData.donorEmail,
           message: formData.message,
+          projectId: formData.selectedProject,
+          programCategory: formData.selectedProgram,
         }),
       })
 
@@ -131,6 +293,8 @@ export function Donate() {
     },
   ]
 
+  const selectedProject = getSelectedProjectDetails()
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -159,6 +323,91 @@ export function Donate() {
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                     {error}
+                  </div>
+                )}
+
+                {/* Project Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select a Project (Optional)
+                  </label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="selectedProject"
+                          value=""
+                          checked={formData.selectedProject === ''}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-900">General Fund (Where needed most)</span>
+                      </label>
+                    </div>
+                    
+                    {Object.entries(programCategories).map(([programId, program]) => {
+                      const programProjects = projects.filter(p => p.program_category === programId)
+                      if (programProjects.length === 0) return null
+                      
+                      return (
+                        <div key={programId} className="border border-gray-200 rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => toggleProgramExpansion(programId)}
+                            className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
+                          >
+                            <span className="font-medium text-gray-900">{program.title}</span>
+                            {expandedPrograms.has(programId) ? (
+                              <ChevronUp className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            )}
+                          </button>
+                          
+                          {expandedPrograms.has(programId) && (
+                            <div className="border-t border-gray-200 p-3 space-y-2">
+                              {programProjects.map((project) => (
+                                <label key={project.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                                  <input
+                                    type="radio"
+                                    name="selectedProject"
+                                    value={project.id}
+                                    checked={formData.selectedProject === project.id}
+                                    onChange={handleInputChange}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mt-1"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-gray-900">{project.title}</div>
+                                    <div className="text-xs text-gray-600">{project.location}</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      ${project.raised_amount.toLocaleString()} raised of ${project.target_amount.toLocaleString()} goal
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                                      <div
+                                        className="bg-blue-600 h-1 rounded-full"
+                                        style={{ width: `${getProgressPercentage(project.raised_amount, project.target_amount)}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected Project Details */}
+                {selectedProject && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-medium text-blue-900 mb-2">Supporting: {selectedProject.title}</h3>
+                    <p className="text-sm text-blue-700 mb-2">{selectedProject.description}</p>
+                    <div className="text-xs text-blue-600">
+                      📍 {selectedProject.location} • 👥 {selectedProject.beneficiaries.toLocaleString()} beneficiaries
+                    </div>
                   </div>
                 )}
 
