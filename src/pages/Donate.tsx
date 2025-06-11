@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
-import { Heart, CreditCard, Shield, Users, Target, Globe, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, CreditCard, Shield, Users, Target, Globe, ChevronDown, ChevronUp, Search, Filter } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -45,6 +45,7 @@ export function Donate() {
   const [error, setError] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [expandedPrograms, setExpandedPrograms] = useState<Set<string>>(new Set())
+  const [searchTerm, setSearchTerm] = useState('')
 
   const predefinedAmounts = ['25', '50', '100', '250', '500', 'custom']
 
@@ -116,6 +117,19 @@ export function Donate() {
 
   const getSelectedProjectDetails = () => {
     return projects.find(p => p.id === formData.selectedProject)
+  }
+
+  const getFilteredProjects = () => {
+    return projects.filter(project => {
+      const matchesSearch = !searchTerm || 
+                           project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           project.location.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesProgram = !formData.selectedProgram || project.program_category === formData.selectedProgram
+      
+      return matchesSearch && matchesProgram
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -205,16 +219,17 @@ export function Donate() {
   ]
 
   const selectedProject = getSelectedProjectDetails()
+  const filteredProjects = getFilteredProjects()
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-theme-background transition-colors duration-300">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white transition-colors duration-300 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Make a Donation</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100">
+            <Heart className="h-16 w-16 mx-auto mb-6 text-blue-200 animate-pulse" />
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">Make a Donation</h1>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
               Your generosity creates lasting change in communities worldwide. 
               Every donation makes a real difference in someone's life.
             </p>
@@ -223,80 +238,96 @@ export function Donate() {
       </section>
 
       {/* Donation Form Section */}
-      <section className="py-20">
+      <section className="py-20 bg-theme-background transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Donation Form */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose Your Donation Amount</h2>
+            <div className="theme-card p-8">
+              <h2 className="text-2xl font-bold text-theme-text transition-colors duration-300 mb-6">Choose Your Donation Amount</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-theme text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* Project Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-3">
                     Select a Project (Optional)
                   </label>
+                  
+                  {/* Search Projects */}
+                  <div className="mb-4 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-text-secondary h-4 w-4" />
+                    <input
+                      type="text"
+                      placeholder="Search projects..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
+                    />
+                  </div>
+                  
                   <div className="space-y-3">
                     <div>
-                      <label className="flex items-center">
+                      <label className="flex items-center p-3 bg-theme-surface border border-theme-border rounded-theme hover:bg-theme-background transition-colors duration-300">
                         <input
                           type="radio"
                           name="selectedProject"
                           value=""
                           checked={formData.selectedProject === ''}
                           onChange={handleInputChange}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          className="h-4 w-4 text-theme-primary focus:ring-theme-primary border-theme-border"
                         />
-                        <span className="ml-2 text-sm text-gray-900">General Fund (Where needed most)</span>
+                        <span className="ml-2 text-theme-text transition-colors duration-300">General Fund (Where needed most)</span>
                       </label>
                     </div>
                     
                     {Object.entries(programCategories).map(([programId, program]) => {
-                      const programProjects = projects.filter(p => p.program_category === programId)
+                      const programProjects = filteredProjects.filter(p => p.program_category === programId)
                       if (programProjects.length === 0) return null
                       
                       return (
-                        <div key={programId} className="border border-gray-200 rounded-lg">
+                        <div key={programId} className="border border-theme-border rounded-theme overflow-hidden transition-colors duration-300">
                           <button
                             type="button"
                             onClick={() => toggleProgramExpansion(programId)}
-                            className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
+                            className="w-full flex items-center justify-between p-3 text-left hover:bg-theme-surface transition-colors duration-300"
                           >
-                            <span className="font-medium text-gray-900">{program.title}</span>
+                            <span className="font-medium text-theme-text transition-colors duration-300">{program.title}</span>
                             {expandedPrograms.has(programId) ? (
-                              <ChevronUp className="h-4 w-4 text-gray-500" />
+                              <ChevronUp className="h-4 w-4 text-theme-text-secondary transition-colors duration-300" />
                             ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                              <ChevronDown className="h-4 w-4 text-theme-text-secondary transition-colors duration-300" />
                             )}
                           </button>
                           
                           {expandedPrograms.has(programId) && (
-                            <div className="border-t border-gray-200 p-3 space-y-2">
+                            <div className="border-t border-theme-border p-3 space-y-2 transition-colors duration-300">
                               {programProjects.map((project) => (
-                                <label key={project.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                                <label 
+                                  key={project.id} 
+                                  className="flex items-start space-x-3 p-2 hover:bg-theme-surface rounded-theme transition-colors duration-300"
+                                >
                                   <input
                                     type="radio"
                                     name="selectedProject"
                                     value={project.id}
                                     checked={formData.selectedProject === project.id}
                                     onChange={handleInputChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mt-1"
+                                    className="h-4 w-4 text-theme-primary focus:ring-theme-primary border-theme-border mt-1"
                                   />
                                   <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900">{project.title}</div>
-                                    <div className="text-xs text-gray-600">{project.location}</div>
-                                    <div className="text-xs text-gray-500 mt-1">
+                                    <div className="text-sm font-medium text-theme-text transition-colors duration-300">{project.title}</div>
+                                    <div className="text-xs text-theme-text-secondary transition-colors duration-300">{project.location}</div>
+                                    <div className="text-xs text-theme-text-secondary transition-colors duration-300 mt-1">
                                       ${project.raised_amount.toLocaleString()} raised of ${project.target_amount.toLocaleString()} goal
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                                    <div className="w-full bg-theme-border rounded-full h-1 mt-1 transition-colors duration-300">
                                       <div
-                                        className="bg-blue-600 h-1 rounded-full"
+                                        className="bg-theme-primary h-1 rounded-full transition-all duration-300"
                                         style={{ width: `${getProgressPercentage(project.raised_amount, project.target_amount)}%` }}
                                       ></div>
                                     </div>
@@ -313,10 +344,10 @@ export function Donate() {
 
                 {/* Selected Project Details */}
                 {selectedProject && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-medium text-blue-900 mb-2">Supporting: {selectedProject.title}</h3>
-                    <p className="text-sm text-blue-700 mb-2">{selectedProject.description}</p>
-                    <div className="text-xs text-blue-600">
+                  <div className="bg-theme-surface border border-theme-border rounded-theme p-4 transition-colors duration-300">
+                    <h3 className="font-medium text-theme-text transition-colors duration-300 mb-2">Supporting: {selectedProject.title}</h3>
+                    <p className="text-sm text-theme-text-secondary transition-colors duration-300 mb-2">{selectedProject.description}</p>
+                    <div className="text-xs text-theme-text-secondary transition-colors duration-300">
                       📍 {selectedProject.location} • 👥 {selectedProject.beneficiaries.toLocaleString()} beneficiaries
                     </div>
                   </div>
@@ -324,7 +355,7 @@ export function Donate() {
 
                 {/* Amount Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-3">
                     Select Amount
                   </label>
                   <div className="grid grid-cols-3 gap-3 mb-4">
@@ -333,10 +364,10 @@ export function Donate() {
                         key={amount}
                         type="button"
                         onClick={() => handleAmountChange(amount)}
-                        className={`p-3 border-2 rounded-lg font-medium transition-colors ${
+                        className={`p-3 border-2 rounded-theme font-medium transition-all duration-300 ${
                           formData.amount === amount
-                            ? 'border-blue-600 bg-blue-50 text-blue-600'
-                            : 'border-gray-300 hover:border-blue-300'
+                            ? 'border-theme-primary bg-theme-surface text-theme-primary shadow-md'
+                            : 'border-theme-border hover:border-theme-primary/50 text-theme-text'
                         }`}
                       >
                         {amount === 'custom' ? 'Custom' : `$${amount}`}
@@ -346,11 +377,11 @@ export function Donate() {
                   
                   {formData.amount === 'custom' && (
                     <div>
-                      <label htmlFor="customAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="customAmount" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                         Custom Amount
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-text-secondary transition-colors duration-300">$</span>
                         <input
                           type="number"
                           id="customAmount"
@@ -359,7 +390,7 @@ export function Donate() {
                           step="0.01"
                           value={formData.customAmount}
                           onChange={handleInputChange}
-                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full pl-8 pr-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                           placeholder="0.00"
                         />
                       </div>
@@ -370,7 +401,7 @@ export function Donate() {
                 {/* Donor Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="donorName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="donorName" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                       Full Name *
                     </label>
                     <input
@@ -380,12 +411,12 @@ export function Donate() {
                       required
                       value={formData.donorName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                       placeholder="Your full name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="donorEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="donorEmail" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                       Email Address *
                     </label>
                     <input
@@ -395,7 +426,7 @@ export function Donate() {
                       required
                       value={formData.donorEmail}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                       placeholder="your.email@example.com"
                     />
                   </div>
@@ -403,7 +434,7 @@ export function Donate() {
 
                 {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                     Message (Optional)
                   </label>
                   <textarea
@@ -412,7 +443,7 @@ export function Donate() {
                     rows={3}
                     value={formData.message}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                     placeholder="Leave a message of support..."
                   />
                 </div>
@@ -425,9 +456,9 @@ export function Donate() {
                     type="checkbox"
                     checked={formData.isAnonymous}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-theme-primary focus:ring-theme-primary border-theme-border rounded transition-colors duration-300"
                   />
-                  <label htmlFor="isAnonymous" className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor="isAnonymous" className="ml-2 block text-sm text-theme-text transition-colors duration-300">
                     Make this donation anonymous
                   </label>
                 </div>
@@ -436,7 +467,7 @@ export function Donate() {
                 <button
                   type="submit"
                   disabled={loading || getDonationAmount() < 1}
-                  className="w-full flex items-center justify-center px-6 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center px-6 py-4 bg-theme-primary text-white font-semibold rounded-theme hover:bg-opacity-90 focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:translate-y-[-2px] hover:shadow-lg"
                 >
                   {loading ? (
                     <div className="flex items-center">
@@ -452,7 +483,7 @@ export function Donate() {
                 </button>
 
                 {/* Security Notice */}
-                <div className="flex items-center justify-center text-sm text-gray-600">
+                <div className="flex items-center justify-center text-sm text-theme-text-secondary transition-colors duration-300">
                   <Shield className="h-4 w-4 mr-2" />
                   Secure payment powered by Stripe
                 </div>
@@ -461,65 +492,69 @@ export function Donate() {
 
             {/* Impact Information */}
             <div className="space-y-8">
-              <div className="bg-blue-50 rounded-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Impact</h3>
+              <div className="bg-theme-surface rounded-theme p-8 border border-theme-border transition-colors duration-300">
+                <h3 className="text-2xl font-bold text-theme-text transition-colors duration-300 mb-6">Your Impact</h3>
                 <div className="space-y-4">
                   {impactStats.map((stat, index) => (
-                    <div key={index} className="flex items-start space-x-4">
+                    <div 
+                      key={index} 
+                      className="flex items-start space-x-4 p-3 bg-theme-background rounded-theme hover:shadow-md transition-all duration-300 transform hover:translate-x-1"
+                      style={{ transitionDelay: `${index * 100}ms` }}
+                    >
                       <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-12 h-12 bg-theme-primary rounded-lg flex items-center justify-center transition-colors duration-300">
                           <stat.icon className="h-6 w-6 text-white" />
                         </div>
                       </div>
                       <div>
-                        <div className="text-lg font-semibold text-blue-600">{stat.amount}</div>
-                        <div className="text-gray-700">{stat.impact}</div>
+                        <div className="text-lg font-semibold text-theme-primary transition-colors duration-300">{stat.amount}</div>
+                        <div className="text-theme-text transition-colors duration-300">{stat.impact}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Why Donate?</h3>
-                <ul className="space-y-3 text-gray-700">
+              <div className="bg-theme-surface rounded-theme p-8 border border-theme-border transition-colors duration-300">
+                <h3 className="text-xl font-bold text-theme-text transition-colors duration-300 mb-4">Why Donate?</h3>
+                <ul className="space-y-3 text-theme-text transition-colors duration-300">
                   <li className="flex items-start">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-theme-primary rounded-full mt-2 mr-3 flex-shrink-0 transition-colors duration-300"></div>
                     <span>85% of donations go directly to programs</span>
                   </li>
                   <li className="flex items-start">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-theme-primary rounded-full mt-2 mr-3 flex-shrink-0 transition-colors duration-300"></div>
                     <span>Tax-deductible in the United States</span>
                   </li>
                   <li className="flex items-start">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-theme-primary rounded-full mt-2 mr-3 flex-shrink-0 transition-colors duration-300"></div>
                     <span>Transparent reporting on fund usage</span>
                   </li>
                   <li className="flex items-start">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-theme-primary rounded-full mt-2 mr-3 flex-shrink-0 transition-colors duration-300"></div>
                     <span>Immediate impact in communities</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-green-50 rounded-xl p-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Achievements</h3>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-theme p-8 border border-green-200 dark:border-green-900/30 transition-colors duration-300">
+                <h3 className="text-xl font-bold text-green-800 dark:text-green-300 transition-colors duration-300 mb-4">Recent Achievements</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">1,250</div>
-                    <div className="text-sm text-gray-600">Children educated</div>
+                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">1,250</div>
+                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Children educated</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">45</div>
-                    <div className="text-sm text-gray-600">Wells built</div>
+                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">45</div>
+                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Wells built</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">8,500</div>
-                    <div className="text-sm text-gray-600">Medical treatments</div>
+                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">8,500</div>
+                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Medical treatments</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">320</div>
-                    <div className="text-sm text-gray-600">Homes built</div>
+                  <div className="text-center p-3 bg-white dark:bg-green-900/30 rounded-theme shadow-sm transition-colors duration-300">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 transition-colors duration-300">320</div>
+                    <div className="text-sm text-green-700 dark:text-green-300 transition-colors duration-300">Homes built</div>
                   </div>
                 </div>
               </div>
@@ -529,9 +564,9 @@ export function Donate() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-theme-surface transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+          <h2 className="text-3xl font-bold text-theme-text transition-colors duration-300 text-center mb-12">
             Donation FAQ
           </h2>
           <div className="space-y-6">
@@ -553,11 +588,15 @@ export function Donate() {
                 answer: 'Yes, you can set up monthly recurring donations by contacting us directly. This helps us plan long-term projects and creates sustained impact.',
               },
             ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <div 
+                key={index} 
+                className="theme-card p-6 hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px]"
+                style={{ transitionDelay: `${index * 50}ms` }}
+              >
+                <h3 className="text-lg font-semibold text-theme-text transition-colors duration-300 mb-3">
                   {faq.question}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-theme-text-secondary transition-colors duration-300">
                   {faq.answer}
                 </p>
               </div>

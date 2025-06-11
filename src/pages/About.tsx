@@ -53,13 +53,13 @@ export function About() {
   ]
 
   return (
-    <div className="min-h-screen bg-theme-background">
+    <div className="min-h-screen bg-theme-background transition-colors duration-300">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white py-20">
+      <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white transition-colors duration-300 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">About {siteName}</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">About {siteName}</h1>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
               Founded in 2010, we've been dedicated to creating sustainable change 
               in communities worldwide through innovative programs and partnerships.
             </p>
@@ -68,37 +68,37 @@ export function About() {
       </section>
 
       {/* Mission Section */}
-      <section className="py-20 bg-theme-background">
+      <section className="py-20 bg-theme-background transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-theme-text transition-colors duration-300 mb-6">
                 Our Mission
               </h2>
-              <p className="text-lg text-theme-text-secondary mb-6">
+              <p className="text-lg text-theme-text-secondary transition-colors duration-300 mb-6">
                 {siteDescription}
               </p>
-              <p className="text-lg text-theme-text-secondary mb-8">
+              <p className="text-lg text-theme-text-secondary transition-colors duration-300 mb-8">
                 We believe that every person deserves the opportunity to thrive, regardless of 
                 their circumstances. Through our comprehensive programs and dedicated partnerships, 
                 we work to break cycles of poverty and build stronger, more resilient communities.
               </p>
               <div className="grid grid-cols-2 gap-6">
-                <div className="text-center p-4 theme-card">
-                  <div className="text-3xl font-bold text-theme-primary mb-2">15+</div>
-                  <div className="text-theme-text-secondary">Years of Impact</div>
+                <div className="text-center p-4 theme-card transform hover:scale-105 transition-all duration-300">
+                  <div className="text-3xl font-bold text-theme-primary transition-colors duration-300 mb-2">15+</div>
+                  <div className="text-theme-text-secondary transition-colors duration-300">Years of Impact</div>
                 </div>
-                <div className="text-center p-4 theme-card">
-                  <div className="text-3xl font-bold text-theme-primary mb-2">25</div>
-                  <div className="text-theme-text-secondary">Countries Served</div>
+                <div className="text-center p-4 theme-card transform hover:scale-105 transition-all duration-300">
+                  <div className="text-3xl font-bold text-theme-primary transition-colors duration-300 mb-2">25</div>
+                  <div className="text-theme-text-secondary transition-colors duration-300">Countries Served</div>
                 </div>
               </div>
             </div>
-            <div>
+            <div className="overflow-hidden rounded-theme">
               <img
                 src="https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg?auto=compress&cs=tinysrgb&w=800"
                 alt="Our mission in action"
-                className="rounded-theme shadow-lg transition-transform duration-300 hover:scale-105"
+                className="w-full h-auto rounded-theme shadow-lg transition-transform duration-500 hover:scale-105"
               />
             </div>
           </div>
@@ -106,27 +106,31 @@ export function About() {
       </section>
 
       {/* Values Section */}
-      <section className="py-20 bg-theme-surface">
+      <section className="py-20 bg-theme-surface transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-theme-text transition-colors duration-300 mb-4">
               Our Core Values
             </h2>
-            <p className="text-xl text-theme-text-secondary max-w-3xl mx-auto">
+            <p className="text-xl text-theme-text-secondary transition-colors duration-300 max-w-3xl mx-auto">
               These principles guide everything we do and shape our approach to creating positive change.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="theme-card p-6 text-center group">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-200 group-hover:scale-110">
+              <div 
+                key={index} 
+                className="theme-card p-6 text-center group transform hover:scale-105 transition-all duration-300"
+                style={{ transitionDelay: `${index * 50}ms` }}
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                   <value.icon className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-theme-text mb-3">
+                <h3 className="text-xl font-semibold text-theme-text transition-colors duration-300 mb-3">
                   {value.title}
                 </h3>
-                <p className="text-theme-text-secondary">
+                <p className="text-theme-text-secondary transition-colors duration-300">
                   {value.description}
                 </p>
               </div>
@@ -136,33 +140,40 @@ export function About() {
       </section>
 
       {/* Team Section */}
-      <section className="py-20 bg-theme-background">
+      <section className="py-20 bg-theme-background transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-theme-text transition-colors duration-300 mb-4">
               Meet Our Team
             </h2>
-            <p className="text-lg text-theme-text-secondary max-w-3xl mx-auto">
+            <p className="text-lg text-theme-text-secondary transition-colors duration-300 max-w-3xl mx-auto">
               Our dedicated team brings together diverse expertise and a shared passion for making a difference.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, index) => (
-              <div key={index} className="theme-card overflow-hidden group">
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+              <div 
+                key={index} 
+                className="theme-card overflow-hidden group transform hover:scale-105 transition-all duration-300"
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
+                <div className="relative overflow-hidden">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-theme-text mb-2">
+                  <h3 className="text-xl font-semibold text-theme-text transition-colors duration-300 mb-2">
                     {member.name}
                   </h3>
-                  <p className="text-theme-primary font-medium mb-3">
+                  <p className="text-theme-primary font-medium transition-colors duration-300 mb-3">
                     {member.role}
                   </p>
-                  <p className="text-theme-text-secondary">
+                  <p className="text-theme-text-secondary transition-colors duration-300">
                     {member.bio}
                   </p>
                 </div>
@@ -173,26 +184,26 @@ export function About() {
       </section>
 
       {/* Impact Section */}
-      <section className="py-20 bg-theme-primary text-white">
+      <section className="py-20 bg-theme-primary text-white transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Our Impact by the Numbers
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">50,000+</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">50,000+</div>
               <div className="text-blue-200">Lives Impacted</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">150+</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">150+</div>
               <div className="text-blue-200">Projects Completed</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">1,200+</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">1,200+</div>
               <div className="text-blue-200">Active Volunteers</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">$2.5M+</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">$2.5M+</div>
               <div className="text-blue-200">Funds Raised</div>
             </div>
           </div>

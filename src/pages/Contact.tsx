@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Mail, Phone, MapPin, Send, Clock, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,11 @@ export function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const { getSetting } = useSiteSettings()
+
+  const contactEmail = getSetting('contact_email', 'info@hopefoundation.org')
+  const contactPhone = getSetting('contact_phone', '+1 (555) 123-4567')
+  const contactAddress = getSetting('contact_address', '123 Hope Street, City, State 12345')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -58,19 +64,19 @@ export function Contact() {
     {
       icon: Mail,
       title: 'Email Us',
-      details: 'info@hopefoundation.org',
+      details: contactEmail,
       description: 'Send us an email anytime',
     },
     {
       icon: Phone,
       title: 'Call Us',
-      details: '+1 (555) 123-4567',
+      details: contactPhone,
       description: 'Mon-Fri 9AM-5PM EST',
     },
     {
       icon: MapPin,
       title: 'Visit Us',
-      details: '123 Hope Street, City, State 12345',
+      details: contactAddress,
       description: 'Our main office location',
     },
     {
@@ -82,13 +88,13 @@ export function Contact() {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-theme-background transition-colors duration-300">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white transition-colors duration-300 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Contact Us</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">Contact Us</h1>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
               Get in touch with us to learn more about our programs, volunteer opportunities, or how you can make a difference.
             </p>
           </div>
@@ -96,25 +102,25 @@ export function Contact() {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20">
+      <section className="py-20 bg-theme-background transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+              <h2 className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-6">Send us a Message</h2>
               
               {submitted ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-                  <div className="text-green-600 mb-4">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-theme p-8 text-center transition-colors duration-300">
+                  <div className="text-green-600 dark:text-green-400 mb-4 transition-colors duration-300">
                     <CheckCircle className="h-16 w-16 mx-auto" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-green-800 mb-4">Message Sent Successfully!</h3>
-                  <p className="text-green-700 mb-6">
+                  <h3 className="text-2xl font-semibold text-green-800 dark:text-green-300 mb-4 transition-colors duration-300">Message Sent Successfully!</h3>
+                  <p className="text-green-700 dark:text-green-400 mb-6 transition-colors duration-300">
                     Thank you for reaching out to us. We've received your message and will get back to you within 24 hours.
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="px-6 py-3 bg-green-600 text-white rounded-theme hover:bg-green-700 transition-colors duration-300 transform hover:scale-105"
                   >
                     Send Another Message
                   </button>
@@ -122,14 +128,14 @@ export function Contact() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-theme text-sm transition-colors duration-300">
                       {error}
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="name" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                         Full Name *
                       </label>
                       <input
@@ -139,12 +145,12 @@ export function Contact() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                         placeholder="Your full name"
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                         Email Address *
                       </label>
                       <input
@@ -154,14 +160,14 @@ export function Contact() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                         placeholder="your.email@example.com"
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="subject" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                       Subject *
                     </label>
                     <select
@@ -170,7 +176,7 @@ export function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300"
                     >
                       <option value="">Select a subject</option>
                       <option value="volunteer">Volunteer Opportunities</option>
@@ -185,7 +191,7 @@ export function Contact() {
                   </div>
                   
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="message" className="block text-sm font-medium text-theme-text transition-colors duration-300 mb-2">
                       Message *
                     </label>
                     <textarea
@@ -195,10 +201,10 @@ export function Contact() {
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-vertical"
+                      className="w-full px-4 py-3 bg-theme-background border border-theme-border rounded-theme focus:ring-2 focus:ring-theme-primary focus:border-transparent transition-colors duration-300 resize-vertical"
                       placeholder="Tell us how we can help you..."
                     />
-                    <div className="text-right text-sm text-gray-500 mt-1">
+                    <div className="text-right text-sm text-theme-text-secondary transition-colors duration-300 mt-1">
                       {formData.message.length}/1000 characters
                     </div>
                   </div>
@@ -206,7 +212,7 @@ export function Contact() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full px-6 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-6 py-4 bg-theme-primary text-white font-medium rounded-theme hover:bg-opacity-90 focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:translate-y-[-2px] hover:shadow-lg"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
@@ -226,28 +232,32 @@ export function Contact() {
 
             {/* Contact Information */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Get in Touch</h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <h2 className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-6">Get in Touch</h2>
+              <p className="text-lg text-theme-text-secondary transition-colors duration-300 mb-8">
                 We'd love to hear from you. Whether you have questions about our programs, 
                 want to volunteer, or are interested in partnering with us, we're here to help.
               </p>
 
               <div className="space-y-6">
                 {contactInfo.map((info, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div 
+                    key={index} 
+                    className="flex items-start space-x-4 p-4 bg-theme-surface border border-theme-border rounded-theme hover:bg-theme-background transition-all duration-300 transform hover:translate-x-1"
+                    style={{ transitionDelay: `${index * 100}ms` }}
+                  >
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <info.icon className="h-6 w-6 text-blue-600" />
+                      <div className="w-12 h-12 bg-theme-primary/10 rounded-lg flex items-center justify-center transition-colors duration-300">
+                        <info.icon className="h-6 w-6 text-theme-primary transition-colors duration-300" />
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      <h3 className="text-lg font-semibold text-theme-text transition-colors duration-300 mb-1">
                         {info.title}
                       </h3>
-                      <p className="text-blue-600 font-medium mb-1">
+                      <p className="text-theme-primary font-medium transition-colors duration-300 mb-1">
                         {info.details}
                       </p>
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-theme-text-secondary text-sm transition-colors duration-300">
                         {info.description}
                       </p>
                     </div>
@@ -256,35 +266,35 @@ export function Contact() {
               </div>
 
               {/* Response Time Info */}
-              <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-900 mb-3">Response Times</h3>
+              <div className="mt-8 p-6 bg-theme-surface border border-theme-border rounded-theme transition-colors duration-300">
+                <h3 className="text-lg font-semibold text-theme-text transition-colors duration-300 mb-3">Response Times</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-blue-700">General Inquiries:</span>
-                    <span className="font-medium text-blue-900">Within 24 hours</span>
+                    <span className="text-theme-text-secondary transition-colors duration-300">General Inquiries:</span>
+                    <span className="font-medium text-theme-text transition-colors duration-300">Within 24 hours</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Volunteer Applications:</span>
-                    <span className="font-medium text-blue-900">Within 48 hours</span>
+                    <span className="text-theme-text-secondary transition-colors duration-300">Volunteer Applications:</span>
+                    <span className="font-medium text-theme-text transition-colors duration-300">Within 48 hours</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Partnership Inquiries:</span>
-                    <span className="font-medium text-blue-900">Within 3-5 business days</span>
+                    <span className="text-theme-text-secondary transition-colors duration-300">Partnership Inquiries:</span>
+                    <span className="font-medium text-theme-text transition-colors duration-300">Within 3-5 business days</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Media Requests:</span>
-                    <span className="font-medium text-blue-900">Within 24 hours</span>
+                    <span className="text-theme-text-secondary transition-colors duration-300">Media Requests:</span>
+                    <span className="font-medium text-theme-text transition-colors duration-300">Within 24 hours</span>
                   </div>
                 </div>
               </div>
 
               {/* Map Placeholder */}
               <div className="mt-8">
-                <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
+                <div className="bg-theme-surface border border-theme-border rounded-theme h-64 flex items-center justify-center transition-colors duration-300">
                   <div className="text-center">
-                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">Interactive map would go here</p>
-                    <p className="text-sm text-gray-400 mt-1">123 Hope Street, City, State 12345</p>
+                    <MapPin className="h-12 w-12 text-theme-text-secondary mx-auto mb-2 transition-colors duration-300" />
+                    <p className="text-theme-text-secondary transition-colors duration-300">Interactive map would go here</p>
+                    <p className="text-sm text-theme-text-secondary transition-colors duration-300 mt-1">{contactAddress}</p>
                   </div>
                 </div>
               </div>
@@ -294,13 +304,13 @@ export function Contact() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-theme-surface transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-theme-text-secondary transition-colors duration-300">
               Quick answers to common questions about our organization and programs.
             </p>
           </div>
@@ -332,11 +342,15 @@ export function Contact() {
                 answer: 'Yes! We welcome visitors and offer guided tours of our facilities. Please contact us at least 48 hours in advance to schedule your visit and ensure someone is available to show you around.',
               },
             ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <div 
+                key={index} 
+                className="theme-card p-6 hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px]"
+                style={{ transitionDelay: `${index * 50}ms` }}
+              >
+                <h3 className="text-lg font-semibold text-theme-text transition-colors duration-300 mb-3">
                   {faq.question}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-theme-text-secondary transition-colors duration-300">
                   {faq.answer}
                 </p>
               </div>

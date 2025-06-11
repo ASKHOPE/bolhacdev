@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { MaintenanceWrapper } from './components/MaintenanceWrapper'
+import { PageWrapper } from './components/PageWrapper'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 
@@ -66,26 +67,28 @@ function App() {
                     <>
                       <Navbar />
                       <main className="flex-1">
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          <Route path="/about" element={<About />} />
-                          <Route path="/programs" element={<Programs />} />
-                          <Route path="/programs/:programId" element={<ProgramDetail />} />
-                          <Route path="/events" element={<Events />} />
-                          <Route path="/contact" element={<Contact />} />
-                          <Route path="/donate" element={<Donate />} />
-                          <Route path="/donation-success" element={<DonationSuccess />} />
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/register" element={<Register />} />
-                          <Route
-                            path="/dashboard"
-                            element={
-                              <ProtectedRoute>
-                                <Dashboard />
-                              </ProtectedRoute>
-                            }
-                          />
-                        </Routes>
+                        <PageWrapper>
+                          <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/about" element={<About />} />
+                            <Route path="/programs" element={<Programs />} />
+                            <Route path="/programs/:programId" element={<ProgramDetail />} />
+                            <Route path="/events" element={<Events />} />
+                            <Route path="/contact" element={<Contact />} />
+                            <Route path="/donate" element={<Donate />} />
+                            <Route path="/donation-success" element={<DonationSuccess />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route
+                              path="/dashboard"
+                              element={
+                                <ProtectedRoute>
+                                  <Dashboard />
+                                </ProtectedRoute>
+                              }
+                            />
+                          </Routes>
+                        </PageWrapper>
                       </main>
                       <Footer />
                     </>

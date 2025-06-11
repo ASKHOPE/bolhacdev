@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Palette, 
   Sun, 
@@ -17,9 +17,20 @@ import {
   Plus,
   Minus,
   Copy,
-  Check
+  Check,
+  Layout,
+  Layers,
+  Image,
+  RefreshCw
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
+import { supabase } from '../../lib/supabase'
+
+interface PageBackground {
+  page: string
+  background: string
+  description: string
+}
 
 export function AdminTheme() {
   const { theme, maintenance, updateTheme, updateMaintenance, resetTheme, exportTheme, importTheme } = useTheme()
@@ -27,19 +38,77 @@ export function AdminTheme() {
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
   const [newExcludedPage, setNewExcludedPage] = useState('')
+  const [pageBackgrounds, setPageBackgrounds] = useState<PageBackground[]>([
+    { page: 'home', background: '#ffffff', description: 'Home page background' },
+    { page: 'about', background: '#ffffff', description: 'About page background' },
+    { page: 'programs', background: '#ffffff', description: 'Programs page background' },
+    { page: 'events', background: '#ffffff', description: 'Events page background' },
+    { page: 'donate', background: '#ffffff', description: 'Donate page background' },
+    { page: 'contact', background: '#ffffff', description: 'Contact page background' }
+  ])
+  const [loadingBackgrounds, setLoadingBackgrounds] = useState(true)
 
   const tabs = [
     { id: 'appearance', name: 'Appearance', icon: Palette },
     { id: 'typography', name: 'Typography', icon: Type },
     { id: 'effects', name: 'Effects', icon: Zap },
+    { id: 'pages', name: 'Page Backgrounds', icon: Layout },
     { id: 'maintenance', name: 'Maintenance', icon: Wrench },
   ]
 
+  useEffect(() => {
+    fetchPageBackgrounds()
+  }, [])
+
+  const fetchPageBackgrounds = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value, description')
+        .like('key', 'page_bg_%')
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        const backgrounds = data.map(item => ({
+          page: item.key.replace('page_bg_', ''),
+          background: item.value,
+          description: item.description || `${item.key.replace('page_bg_', '').charAt(0).toUpperCase() + item.key.replace('page_bg_', '').slice(1)} page background`
+        }))
+        setPageBackgrounds(backgrounds)
+      }
+    } catch (error) {
+      console.error('Error fetching page backgrounds:', error)
+    } finally {
+      setLoadingBackgrounds(false)
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
-    // Theme updates are automatically saved in the context
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setSaving(false)
+    
+    try {
+      // Save page backgrounds
+      for (const bg of pageBackgrounds) {
+        await supabase
+          .from('site_settings')
+          .upsert({
+            key: `page_bg_${bg.page}`,
+            value: bg.background,
+            description: bg.description,
+            is_public: true
+          }, { onConflict: 'key' })
+      }
+      
+      // Theme updates are automatically saved in the context
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      alert('Theme settings saved successfully!')
+    } catch (error) {
+      console.error('Error saving theme settings:', error)
+      alert('Error saving theme settings')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleExport = () => {
@@ -97,6 +166,12 @@ export function AdminTheme() {
     })
   }
 
+  const updatePageBackground = (page: string, color: string) => {
+    setPageBackgrounds(prev => 
+      prev.map(bg => bg.page === page ? { ...bg, background: color } : bg)
+    )
+  }
+
   const presetThemes = [
     {
       name: 'Ocean Blue',
@@ -147,6 +222,23 @@ export function AdminTheme() {
         warning: '#d97706',
         error: '#dc2626',
         info: '#0284c7'
+      }
+    },
+    {
+      name: 'Dark Elegance',
+      colors: {
+        primary: '#3b82f6',
+        secondary: '#94a3b8',
+        accent: '#8b5cf6',
+        background: '#0f172a',
+        surface: '#1e293b',
+        text: '#f1f5f9',
+        textSecondary: '#94a3b8',
+        border: '#334155',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#06b6d4'
       }
     }
   ]
@@ -295,7 +387,7 @@ export function AdminTheme() {
             {/* Preset Themes */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Preset Themes</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {presetThemes.map((preset) => (
                   <button
                     key={preset.name}
@@ -449,6 +541,113 @@ export function AdminTheme() {
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'pages' && (
+          <div>
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Page Background Colors</h2>
+                <button 
+                  onClick={fetchPageBackgrounds}
+                  className="flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </button>
+              </div>
+              
+              {loadingBackgrounds ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Customize the background color for each page. These settings will override the global background color.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {pageBackgrounds.map((bg) => (
+                      <div key={bg.page} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="block text-sm font-medium text-gray-700 capitalize">
+                            {bg.page} Page
+                          </label>
+                          <div 
+                            className="w-6 h-6 rounded-full border border-gray-300"
+                            style={{ backgroundColor: bg.background }}
+                          ></div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="color"
+                            value={bg.background}
+                            onChange={(e) => updatePageBackground(bg.page, e.target.value)}
+                            className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={bg.background}
+                            onChange={(e) => updatePageBackground(bg.page, e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                            placeholder="#FFFFFF"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">{bg.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <Image className="h-5 w-5 text-blue-600 mt-0.5" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-blue-800">Background Images</h3>
+                        <p className="text-sm text-blue-700 mt-1">
+                          For background images, use the Content Management section to upload and set image URLs.
+                          Then reference them in your page backgrounds using CSS url() syntax.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Preview</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  See how your page background colors will look on different pages.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {pageBackgrounds.map((bg) => (
+                    <div 
+                      key={bg.page} 
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
+                      <div className="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-2 border-b border-gray-200 capitalize">
+                        {bg.page} Page
+                      </div>
+                      <div 
+                        className="h-32 p-4 flex items-center justify-center"
+                        style={{ backgroundColor: bg.background }}
+                      >
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500">Background Color</div>
+                          <div className="text-sm font-mono mt-1">{bg.background}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
