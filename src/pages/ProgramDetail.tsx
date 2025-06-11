@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle, ExternalLink } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Project {
@@ -22,6 +22,7 @@ export function ProgramDetail() {
   const { programId } = useParams<{ programId: string }>()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
   const programInfo = {
     education: {
@@ -252,7 +253,11 @@ export function ProgramDetail() {
                         <Heart className="h-4 w-4 mr-2" />
                         Donate Now
                       </Link>
-                      <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                      <button 
+                        onClick={() => setSelectedProject(project)}
+                        className="px-4 py-2 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
                         Learn More
                       </button>
                     </div>
@@ -263,6 +268,131 @@ export function ProgramDetail() {
           )}
         </div>
       </section>
+
+      {/* Project Detail Modal */}
+      {selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="relative">
+              <img
+                src={selectedProject.image_url}
+                alt={selectedProject.title}
+                className="w-full h-64 object-cover rounded-t-xl"
+              />
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5 transform rotate-45" />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-4">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedProject.status)}`}>
+                  {selectedProject.status === 'completed' && <CheckCircle className="h-4 w-4 mr-1" />}
+                  {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
+                </span>
+                <div className="flex items-center text-gray-600">
+                  <Users className="h-5 w-5 mr-2" />
+                  <span className="font-medium">{selectedProject.beneficiaries.toLocaleString()} people impacted</span>
+                </div>
+              </div>
+
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                {selectedProject.title}
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-3">
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="h-5 w-5 mr-3 text-blue-600" />
+                    <span>{selectedProject.location}</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Calendar className="h-5 w-5 mr-3 text-blue-600" />
+                    <span>
+                      {new Date(selectedProject.start_date).toLocaleDateString()} - {new Date(selectedProject.end_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <Target className="h-5 w-5 mr-3 text-blue-600" />
+                    <span>Target: ${selectedProject.target_amount.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Funding Progress</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Raised: ${selectedProject.raised_amount.toLocaleString()}</span>
+                      <span>Goal: ${selectedProject.target_amount.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount)}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-lg font-bold text-blue-600">
+                        {getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount).toFixed(0)}% Complete
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Project Description</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {selectedProject.description}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Project Impact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600 mb-1">
+                      {selectedProject.beneficiaries.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-green-700">People Served</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600 mb-1">
+                      ${selectedProject.raised_amount.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-blue-700">Funds Raised</div>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-600 mb-1">
+                      {Math.ceil((new Date(selectedProject.end_date).getTime() - new Date(selectedProject.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30))}
+                    </div>
+                    <div className="text-sm text-purple-700">Months Duration</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-4">
+                <Link
+                  to={`/donate?project=${selectedProject.id}`}
+                  className="flex-1 flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Heart className="h-5 w-5 mr-2" />
+                  Support This Project
+                </Link>
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CTA Section */}
       <section className="py-20 bg-gray-50">
