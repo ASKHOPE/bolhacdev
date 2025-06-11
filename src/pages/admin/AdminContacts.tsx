@@ -9,7 +9,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  Reply
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -20,7 +21,9 @@ interface ContactMessage {
   subject: string
   message: string
   status: string
+  assigned_to: string | null
   created_at: string
+  updated_at: string
 }
 
 export function AdminContacts() {
@@ -63,6 +66,7 @@ export function AdminContacts() {
       ))
     } catch (error) {
       console.error('Error updating message status:', error)
+      alert('Error updating message status: ' + (error as Error).message)
     }
   }
 
@@ -254,7 +258,7 @@ export function AdminContacts() {
                 </select>
                 
                 <button className="flex items-center px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
-                  <Mail className="h-3 w-3 mr-1" />
+                  <Reply className="h-3 w-3 mr-1" />
                   Reply
                 </button>
               </div>
@@ -262,6 +266,14 @@ export function AdminContacts() {
           </div>
         ))}
       </div>
+
+      {filteredMessages.length === 0 && (
+        <div className="text-center py-12">
+          <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Messages Found</h3>
+          <p className="text-gray-600">No contact messages match your current filters.</p>
+        </div>
+      )}
     </div>
   )
 }

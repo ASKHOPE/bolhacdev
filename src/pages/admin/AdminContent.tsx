@@ -19,11 +19,25 @@ interface SiteSetting {
   is_public: boolean
 }
 
+interface NewSetting {
+  key: string
+  value: string
+  description: string
+  is_public: boolean
+}
+
 export function AdminContent() {
   const [settings, setSettings] = useState<SiteSetting[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newSetting, setNewSetting] = useState<NewSetting>({
+    key: '',
+    value: '',
+    description: '',
+    is_public: true
+  })
 
   useEffect(() => {
     fetchSettings()
@@ -42,6 +56,26 @@ export function AdminContent() {
       console.error('Error fetching settings:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const addSetting = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .insert([newSetting])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setSettings([...settings, data])
+      setNewSetting({ key: '', value: '', description: '', is_public: true })
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Error adding setting:', error)
+      alert('Error adding setting: ' + (error as Error).message)
     }
   }
 
@@ -72,6 +106,7 @@ export function AdminContent() {
       setEditValue('')
     } catch (error) {
       console.error('Error updating setting:', error)
+      alert('Error updating setting: ' + (error as Error).message)
     }
   }
 
@@ -89,6 +124,7 @@ export function AdminContent() {
       ))
     } catch (error) {
       console.error('Error updating setting visibility:', error)
+      alert('Error updating setting: ' + (error as Error).message)
     }
   }
 
@@ -106,6 +142,7 @@ export function AdminContent() {
       setSettings(settings.filter(setting => setting.id !== settingId))
     } catch (error) {
       console.error('Error deleting setting:', error)
+      alert('Error deleting setting: ' + (error as Error).message)
     }
   }
 
@@ -149,12 +186,89 @@ export function AdminContent() {
             <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
             <p className="text-gray-600 mt-2">Manage website content and settings</p>
           </div>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Setting
           </button>
         </div>
       </div>
+
+      {/* Add Setting Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Add New Setting</h2>
+              <button onClick={() => setShowAddForm(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={addSetting} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Key</label>
+                <input
+                  type="text"
+                  required
+                  value={newSetting.key}
+                  onChange={(e) => setNewSetting({...newSetting, key: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="setting_key"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Value</label>
+                <textarea
+                  required
+                  value={newSetting.value}
+                  onChange={(e) => setNewSetting({...newSetting, value: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input
+                  type="text"
+                  value={newSetting.description}
+                  onChange={(e) => setNewSetting({...newSetting, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="Description of this setting"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_public"
+                  checked={newSetting.is_public}
+                  onChange={(e) => setNewSetting({...newSetting, is_public: e.target.checked})}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="is_public" className="ml-2 block text-sm text-gray-900">
+                  Public setting
+                </label>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Add Setting
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Content Sections */}
       <div className="space-y-8">
@@ -189,11 +303,11 @@ export function AdminContent() {
                         
                         {editingId === setting.id ? (
                           <div className="flex items-center space-x-2">
-                            <input
-                              type="text"
+                            <textarea
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              rows={3}
                             />
                             <button
                               onClick={() => saveSetting(setting.id)}

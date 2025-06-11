@@ -10,7 +10,9 @@ import {
   EyeOff,
   MapPin,
   Users,
-  DollarSign
+  DollarSign,
+  X,
+  Save
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -26,7 +28,20 @@ interface Event {
   registration_fee: number
   published: boolean
   featured: boolean
+  created_by: string | null
   created_at: string
+}
+
+interface NewEvent {
+  title: string
+  description: string
+  date: string
+  location: string
+  image_url: string
+  max_attendees: number | null
+  registration_fee: number
+  published: boolean
+  featured: boolean
 }
 
 export function AdminEvents() {
@@ -34,6 +49,19 @@ export function AdminEvents() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [newEvent, setNewEvent] = useState<NewEvent>({
+    title: '',
+    description: '',
+    date: '',
+    location: '',
+    image_url: '',
+    max_attendees: null,
+    registration_fee: 0,
+    published: false,
+    featured: false
+  })
 
   useEffect(() => {
     fetchEvents()
@@ -55,21 +83,61 @@ export function AdminEvents() {
     }
   }
 
-  const toggleEventStatus = async (eventId: string, published: boolean) => {
+  const addEvent = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .insert([{
+          ...newEvent,
+          max_attendees: newEvent.max_attendees || null,
+          current_attendees: 0
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setEvents([data, ...events])
+      setNewEvent({
+        title: '',
+        description: '',
+        date: '',
+        location: '',
+        image_url: '',
+        max_attendees: null,
+        registration_fee: 0,
+        published: false,
+        featured: false
+      })
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Error adding event:', error)
+      alert('Error adding event: ' + (error as Error).message)
+    }
+  }
+
+  const updateEvent = async (eventId: string, updates: Partial<Event>) => {
     try {
       const { error } = await supabase
         .from('events')
-        .update({ published: !published })
+        .update(updates)
         .eq('id', eventId)
 
       if (error) throw error
       
       setEvents(events.map(event => 
-        event.id === eventId ? { ...event, published: !published } : event
+        event.id === eventId ? { ...event, ...updates } : event
       ))
+      setEditingEvent(null)
     } catch (error) {
-      console.error('Error updating event status:', error)
+      console.error('Error updating event:', error)
+      alert('Error updating event: ' + (error as Error).message)
     }
+  }
+
+  const toggleEventStatus = async (eventId: string, published: boolean) => {
+    await updateEvent(eventId, { published: !published })
   }
 
   const deleteEvent = async (eventId: string) => {
@@ -86,6 +154,7 @@ export function AdminEvents() {
       setEvents(events.filter(event => event.id !== eventId))
     } catch (error) {
       console.error('Error deleting event:', error)
+      alert('Error deleting event: ' + (error as Error).message)
     }
   }
 
@@ -115,12 +184,288 @@ export function AdminEvents() {
             <h1 className="text-3xl font-bold text-gray-900">Event Management</h1>
             <p className="text-gray-600 mt-2">Create and manage events</p>
           </div>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Create Event
           </button>
         </div>
       </div>
+
+      {/* Add Event Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Create New Event</h2>
+              <button onClick={() => setShowAddForm(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={addEvent} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    required
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    value={newEvent.image_url}
+                    onChange={(e) => setNewEvent({...newEvent, image_url: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Attendees</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newEvent.max_attendees || ''}
+                    onChange={(e) => setNewEvent({...newEvent, max_attendees: e.target.value ? parseInt(e.target.value) : null})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Leave empty for unlimited"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Fee ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newEvent.registration_fee}
+                    onChange={(e) => setNewEvent({...newEvent, registration_fee: parseFloat(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="published"
+                    checked={newEvent.published}
+                    onChange={(e) => setNewEvent({...newEvent, published: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="published" className="ml-2 block text-sm text-gray-900">
+                    Publish immediately
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    checked={newEvent.featured}
+                    onChange={(e) => setNewEvent({...newEvent, featured: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
+                    Featured event
+                  </label>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Create Event
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Event Modal */}
+      {editingEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Edit Event</h2>
+              <button onClick={() => setEditingEvent(null)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              updateEvent(editingEvent.id, {
+                title: editingEvent.title,
+                description: editingEvent.description,
+                date: editingEvent.date,
+                location: editingEvent.location,
+                image_url: editingEvent.image_url,
+                max_attendees: editingEvent.max_attendees,
+                registration_fee: editingEvent.registration_fee,
+                published: editingEvent.published,
+                featured: editingEvent.featured
+              })
+            }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingEvent.title}
+                    onChange={(e) => setEditingEvent({...editingEvent, title: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    required
+                    value={editingEvent.description}
+                    onChange={(e) => setEditingEvent({...editingEvent, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={editingEvent.date.slice(0, 16)}
+                    onChange={(e) => setEditingEvent({...editingEvent, date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingEvent.location}
+                    onChange={(e) => setEditingEvent({...editingEvent, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    value={editingEvent.image_url || ''}
+                    onChange={(e) => setEditingEvent({...editingEvent, image_url: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Attendees</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingEvent.max_attendees || ''}
+                    onChange={(e) => setEditingEvent({...editingEvent, max_attendees: e.target.value ? parseInt(e.target.value) : null})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Fee ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingEvent.registration_fee}
+                    onChange={(e) => setEditingEvent({...editingEvent, registration_fee: parseFloat(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="edit_published"
+                    checked={editingEvent.published}
+                    onChange={(e) => setEditingEvent({...editingEvent, published: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_published" className="ml-2 block text-sm text-gray-900">
+                    Published
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="edit_featured"
+                    checked={editingEvent.featured}
+                    onChange={(e) => setEditingEvent({...editingEvent, featured: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_featured" className="ml-2 block text-sm text-gray-900">
+                    Featured event
+                  </label>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingEvent(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -285,7 +630,10 @@ export function AdminEvents() {
                 </button>
                 
                 <div className="flex items-center space-x-2">
-                  <button className="text-blue-600 hover:text-blue-900">
+                  <button 
+                    onClick={() => setEditingEvent(event)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button 

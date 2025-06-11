@@ -8,7 +8,9 @@ import {
   Trash2, 
   UserPlus,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  X,
+  Save
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -24,11 +26,28 @@ interface User {
   updated_at: string
 }
 
+interface NewUserForm {
+  email: string
+  full_name: string
+  role: 'admin' | 'user'
+  phone: string
+  bio: string
+}
+
 export function AdminUsers() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [newUser, setNewUser] = useState<NewUserForm>({
+    email: '',
+    full_name: '',
+    role: 'user',
+    phone: '',
+    bio: ''
+  })
 
   useEffect(() => {
     fetchUsers()
@@ -50,37 +69,87 @@ export function AdminUsers() {
     }
   }
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
+  const addUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      // First create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: 'tempPassword123!', // You might want to generate this or send invite
+        email_confirm: true,
+        user_metadata: {
+          full_name: newUser.full_name
+        }
+      })
+
+      if (authError) throw authError
+
+      // Then create/update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          email: newUser.email,
+          full_name: newUser.full_name,
+          role: newUser.role,
+          phone: newUser.phone || null,
+          bio: newUser.bio || null
+        })
+
+      if (profileError) throw profileError
+
+      setNewUser({ email: '', full_name: '', role: 'user', phone: '', bio: '' })
+      setShowAddForm(false)
+      fetchUsers()
+    } catch (error) {
+      console.error('Error adding user:', error)
+      alert('Error adding user: ' + (error as Error).message)
+    }
+  }
+
+  const updateUser = async (userId: string, updates: Partial<User>) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ role: newRole })
+        .update(updates)
         .eq('id', userId)
 
       if (error) throw error
       
       setUsers(users.map(user => 
-        user.id === userId ? { ...user, role: newRole } : user
+        user.id === userId ? { ...user, ...updates } : user
       ))
+      setEditingUser(null)
     } catch (error) {
-      console.error('Error updating user role:', error)
+      console.error('Error updating user:', error)
+      alert('Error updating user: ' + (error as Error).message)
     }
   }
 
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
+    await updateUser(userId, { role: newRole })
+  }
+
   const deleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
 
     try {
-      const { error } = await supabase
+      // Delete from profiles first
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId)
 
-      if (error) throw error
+      if (profileError) throw profileError
+
+      // Delete from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+      if (authError) console.warn('Could not delete auth user:', authError)
       
       setUsers(users.filter(user => user.id !== userId))
     } catch (error) {
       console.error('Error deleting user:', error)
+      alert('Error deleting user: ' + (error as Error).message)
     }
   }
 
@@ -108,12 +177,172 @@ export function AdminUsers() {
             <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
             <p className="text-gray-600 mt-2">Manage user accounts and permissions</p>
           </div>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <UserPlus className="h-4 w-4 mr-2" />
             Add User
           </button>
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Add New User</h2>
+              <button onClick={() => setShowAddForm(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={addUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newUser.full_name}
+                  onChange={(e) => setNewUser({...newUser, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'user'})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <textarea
+                  value={newUser.bio}
+                  onChange={(e) => setNewUser({...newUser, bio: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Add User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Edit User</h2>
+              <button onClick={() => setEditingUser(null)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              updateUser(editingUser.id, {
+                full_name: editingUser.full_name,
+                phone: editingUser.phone,
+                bio: editingUser.bio,
+                role: editingUser.role
+              })
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editingUser.full_name || ''}
+                  onChange={(e) => setEditingUser({...editingUser, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={editingUser.role}
+                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value as 'admin' | 'user'})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editingUser.phone || ''}
+                  onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <textarea
+                  value={editingUser.bio || ''}
+                  onChange={(e) => setEditingUser({...editingUser, bio: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -272,7 +501,10 @@ export function AdminUsers() {
                       >
                         {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                       </button>
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <button 
+                        onClick={() => setEditingUser(user)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button 

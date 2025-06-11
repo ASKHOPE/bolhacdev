@@ -8,7 +8,9 @@ import {
   UserMinus,
   Send,
   Users,
-  TrendingUp
+  TrendingUp,
+  X,
+  Plus
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -16,8 +18,15 @@ interface Subscriber {
   id: string
   email: string
   name: string | null
+  user_id: string | null
   subscribed_at: string
   is_active: boolean
+  unsubscribe_token: string
+}
+
+interface NewSubscriber {
+  email: string
+  name: string
 }
 
 export function AdminNewsletter() {
@@ -25,6 +34,11 @@ export function AdminNewsletter() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newSubscriber, setNewSubscriber] = useState<NewSubscriber>({
+    email: '',
+    name: ''
+  })
 
   useEffect(() => {
     fetchSubscribers()
@@ -46,6 +60,30 @@ export function AdminNewsletter() {
     }
   }
 
+  const addSubscriber = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const { data, error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{
+          email: newSubscriber.email,
+          name: newSubscriber.name || null,
+          is_active: true
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setSubscribers([data, ...subscribers])
+      setNewSubscriber({ email: '', name: '' })
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Error adding subscriber:', error)
+      alert('Error adding subscriber: ' + (error as Error).message)
+    }
+  }
+
   const toggleSubscriberStatus = async (subscriberId: string, isActive: boolean) => {
     try {
       const { error } = await supabase
@@ -60,6 +98,25 @@ export function AdminNewsletter() {
       ))
     } catch (error) {
       console.error('Error updating subscriber status:', error)
+      alert('Error updating subscriber: ' + (error as Error).message)
+    }
+  }
+
+  const deleteSubscriber = async (subscriberId: string) => {
+    if (!confirm('Are you sure you want to delete this subscriber?')) return
+
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .delete()
+        .eq('id', subscriberId)
+
+      if (error) throw error
+      
+      setSubscribers(subscribers.filter(sub => sub.id !== subscriberId))
+    } catch (error) {
+      console.error('Error deleting subscriber:', error)
+      alert('Error deleting subscriber: ' + (error as Error).message)
     }
   }
 
@@ -93,17 +150,74 @@ export function AdminNewsletter() {
             <p className="text-gray-600 mt-2">Manage newsletter subscribers and campaigns</p>
           </div>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Subscriber
+            </button>
+            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Send className="h-4 w-4 mr-2" />
               Send Campaign
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export List
             </button>
           </div>
         </div>
       </div>
+
+      {/* Add Subscriber Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Add New Subscriber</h2>
+              <button onClick={() => setShowAddForm(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={addSubscriber} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newSubscriber.email}
+                  onChange={(e) => setNewSubscriber({...newSubscriber, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
+                <input
+                  type="text"
+                  value={newSubscriber.name}
+                  onChange={(e) => setNewSubscriber({...newSubscriber, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Add Subscriber
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -279,16 +393,24 @@ export function AdminNewsletter() {
                     {new Date(subscriber.subscribed_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => toggleSubscriberStatus(subscriber.id, subscriber.is_active)}
-                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                        subscriber.is_active
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                      }`}
-                    >
-                      {subscriber.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => toggleSubscriberStatus(subscriber.id, subscriber.is_active)}
+                        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                          subscriber.is_active
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {subscriber.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => deleteSubscriber(subscriber.id)}
+                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -296,6 +418,14 @@ export function AdminNewsletter() {
           </table>
         </div>
       </div>
+
+      {filteredSubscribers.length === 0 && (
+        <div className="text-center py-12">
+          <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Subscribers Found</h3>
+          <p className="text-gray-600">No subscribers match your current filters.</p>
+        </div>
+      )}
     </div>
   )
 }
