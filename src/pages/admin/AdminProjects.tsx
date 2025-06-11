@@ -91,72 +91,19 @@ export function AdminProjects() {
     { value: 'completed', label: 'Completed' }
   ]
 
-  // Sample projects data - in a real app, this would come from Supabase
-  const sampleProjects: Project[] = [
-    {
-      id: '1',
-      title: 'Rural School Construction in Kenya',
-      description: 'Building a new primary school to serve 300 children in a remote village in Kenya.',
-      location: 'Nakuru County, Kenya',
-      target_amount: 50000,
-      raised_amount: 32000,
-      start_date: '2025-03-01',
-      end_date: '2025-12-31',
-      status: 'active',
-      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-      beneficiaries: 300,
-      program_category: 'education',
-      published: true,
-      featured: true,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    },
-    {
-      id: '2',
-      title: 'Teacher Training Program - Bangladesh',
-      description: 'Comprehensive training program for 50 local teachers to improve education quality.',
-      location: 'Sylhet Division, Bangladesh',
-      target_amount: 25000,
-      raised_amount: 18500,
-      start_date: '2025-02-15',
-      end_date: '2025-08-15',
-      status: 'active',
-      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-      beneficiaries: 1500,
-      program_category: 'education',
-      published: true,
-      featured: false,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    },
-    {
-      id: '3',
-      title: 'Mobile Health Clinic - Uganda',
-      description: 'Deploying mobile health clinics to provide basic healthcare services.',
-      location: 'Gulu District, Uganda',
-      target_amount: 75000,
-      raised_amount: 45000,
-      start_date: '2025-04-01',
-      end_date: '2026-03-31',
-      status: 'upcoming',
-      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-      beneficiaries: 5000,
-      program_category: 'healthcare',
-      published: false,
-      featured: false,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    }
-  ]
-
   useEffect(() => {
     fetchProjects()
   }, [])
 
   const fetchProjects = async () => {
     try {
-      // In a real app, this would fetch from Supabase projects table
-      setProjects(sampleProjects)
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setProjects(data || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {
@@ -169,15 +116,29 @@ export function AdminProjects() {
     setSubmitting(true)
     
     try {
-      const newProjectData: Project = {
-        id: Date.now().toString(),
-        ...newProject,
-        raised_amount: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{
+          title: newProject.title,
+          description: newProject.description,
+          location: newProject.location,
+          target_amount: newProject.target_amount,
+          start_date: newProject.start_date,
+          end_date: newProject.end_date,
+          status: newProject.status,
+          image_url: newProject.image_url || null,
+          beneficiaries: newProject.beneficiaries,
+          program_category: newProject.program_category,
+          published: newProject.published,
+          featured: newProject.featured,
+          raised_amount: 0
+        }])
+        .select()
+        .single()
 
-      setProjects([newProjectData, ...projects])
+      if (error) throw error
+
+      setProjects([data, ...projects])
       setNewProject({
         title: '',
         description: '',
@@ -205,8 +166,15 @@ export function AdminProjects() {
     setSubmitting(true)
     
     try {
+      const { error } = await supabase
+        .from('projects')
+        .update(updates)
+        .eq('id', projectId)
+
+      if (error) throw error
+      
       setProjects(projects.map(project => 
-        project.id === projectId ? { ...project, ...updates, updated_at: new Date().toISOString() } : project
+        project.id === projectId ? { ...project, ...updates } : project
       ))
       setEditingProject(null)
     } catch (error) {
@@ -225,6 +193,13 @@ export function AdminProjects() {
     if (!confirm('Are you sure you want to delete this project?')) return
 
     try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+
+      if (error) throw error
+      
       setProjects(projects.filter(project => project.id !== projectId))
     } catch (error) {
       console.error('Error deleting project:', error)

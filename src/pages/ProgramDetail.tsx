@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 interface Project {
   id: string
@@ -21,162 +22,6 @@ export function ProgramDetail() {
   const { programId } = useParams<{ programId: string }>()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Sample projects data - in a real app, this would come from Supabase
-  const sampleProjects: Record<string, Project[]> = {
-    education: [
-      {
-        id: '1',
-        title: 'Rural School Construction in Kenya',
-        description: 'Building a new primary school to serve 300 children in a remote village in Kenya. The project includes classrooms, library, and sanitation facilities.',
-        location: 'Nakuru County, Kenya',
-        target_amount: 50000,
-        raised_amount: 32000,
-        start_date: '2025-03-01',
-        end_date: '2025-12-31',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 300,
-        program_category: 'education'
-      },
-      {
-        id: '2',
-        title: 'Teacher Training Program - Bangladesh',
-        description: 'Comprehensive training program for 50 local teachers to improve education quality in rural Bangladesh communities.',
-        location: 'Sylhet Division, Bangladesh',
-        target_amount: 25000,
-        raised_amount: 18500,
-        start_date: '2025-02-15',
-        end_date: '2025-08-15',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 1500,
-        program_category: 'education'
-      },
-      {
-        id: '3',
-        title: 'Digital Learning Center - Peru',
-        description: 'Establishing a computer lab and digital learning center to provide technology education to underserved youth.',
-        location: 'Cusco Region, Peru',
-        target_amount: 35000,
-        raised_amount: 35000,
-        start_date: '2024-06-01',
-        end_date: '2024-12-31',
-        status: 'completed',
-        image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 200,
-        program_category: 'education'
-      }
-    ],
-    healthcare: [
-      {
-        id: '4',
-        title: 'Mobile Health Clinic - Uganda',
-        description: 'Deploying mobile health clinics to provide basic healthcare services to remote communities in northern Uganda.',
-        location: 'Gulu District, Uganda',
-        target_amount: 75000,
-        raised_amount: 45000,
-        start_date: '2025-04-01',
-        end_date: '2026-03-31',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 5000,
-        program_category: 'healthcare'
-      },
-      {
-        id: '5',
-        title: 'Maternal Health Program - India',
-        description: 'Training community health workers and providing essential supplies for maternal and child health in rural India.',
-        location: 'Rajasthan, India',
-        target_amount: 40000,
-        raised_amount: 28000,
-        start_date: '2025-01-15',
-        end_date: '2025-12-15',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 2000,
-        program_category: 'healthcare'
-      }
-    ],
-    'clean-water': [
-      {
-        id: '6',
-        title: 'Well Drilling Project - Mali',
-        description: 'Drilling 10 new wells to provide clean water access to rural communities in Mali, serving over 3,000 people.',
-        location: 'Sikasso Region, Mali',
-        target_amount: 60000,
-        raised_amount: 42000,
-        start_date: '2025-05-01',
-        end_date: '2025-11-30',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 3000,
-        program_category: 'clean-water'
-      },
-      {
-        id: '7',
-        title: 'Water Treatment Facility - Guatemala',
-        description: 'Building a community water treatment facility to ensure safe drinking water for indigenous communities.',
-        location: 'Quiché Department, Guatemala',
-        target_amount: 80000,
-        raised_amount: 55000,
-        start_date: '2025-03-15',
-        end_date: '2026-01-15',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 1500,
-        program_category: 'clean-water'
-      }
-    ],
-    housing: [
-      {
-        id: '8',
-        title: 'Disaster-Resistant Homes - Philippines',
-        description: 'Building typhoon-resistant homes for families affected by recent natural disasters in the Philippines.',
-        location: 'Leyte Province, Philippines',
-        target_amount: 100000,
-        raised_amount: 65000,
-        start_date: '2025-02-01',
-        end_date: '2025-10-31',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/8293778/pexels-photo-8293778.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 50,
-        program_category: 'housing'
-      }
-    ],
-    'community-empowerment': [
-      {
-        id: '9',
-        title: 'Women\'s Microfinance Program - Nepal',
-        description: 'Providing microloans and business training to women entrepreneurs in rural Nepal communities.',
-        location: 'Sindhupalchok District, Nepal',
-        target_amount: 30000,
-        raised_amount: 22000,
-        start_date: '2025-01-01',
-        end_date: '2025-12-31',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/7551659/pexels-photo-7551659.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 100,
-        program_category: 'community-empowerment'
-      }
-    ],
-    innovation: [
-      {
-        id: '10',
-        title: 'Solar Power Initiative - Tanzania',
-        description: 'Installing solar power systems in rural schools and health centers to provide reliable electricity.',
-        location: 'Mwanza Region, Tanzania',
-        target_amount: 45000,
-        raised_amount: 30000,
-        start_date: '2025-04-01',
-        end_date: '2025-09-30',
-        status: 'active',
-        image_url: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800',
-        beneficiaries: 800,
-        program_category: 'innovation'
-      }
-    ]
-  }
 
   const programInfo = {
     education: {
@@ -212,15 +57,28 @@ export function ProgramDetail() {
   }
 
   useEffect(() => {
-    // Simulate loading from database
-    setLoading(true)
-    setTimeout(() => {
-      if (programId && sampleProjects[programId]) {
-        setProjects(sampleProjects[programId])
-      }
-      setLoading(false)
-    }, 500)
+    if (programId) {
+      fetchProjects()
+    }
   }, [programId])
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('program_category', programId)
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setProjects(data || [])
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getProgressPercentage = (raised: number, target: number) => {
     return Math.min((raised / target) * 100, 100)

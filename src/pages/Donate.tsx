@@ -48,109 +48,6 @@ export function Donate() {
 
   const predefinedAmounts = ['25', '50', '100', '250', '500', 'custom']
 
-  // Sample projects data - in a real app, this would come from Supabase
-  const sampleProjects: Project[] = [
-    {
-      id: '1',
-      title: 'Rural School Construction in Kenya',
-      description: 'Building a new primary school to serve 300 children in a remote village.',
-      location: 'Nakuru County, Kenya',
-      target_amount: 50000,
-      raised_amount: 32000,
-      program_category: 'education',
-      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 300
-    },
-    {
-      id: '2',
-      title: 'Teacher Training Program - Bangladesh',
-      description: 'Comprehensive training for 50 local teachers to improve education quality.',
-      location: 'Sylhet Division, Bangladesh',
-      target_amount: 25000,
-      raised_amount: 18500,
-      program_category: 'education',
-      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 1500
-    },
-    {
-      id: '4',
-      title: 'Mobile Health Clinic - Uganda',
-      description: 'Deploying mobile health clinics to provide basic healthcare services.',
-      location: 'Gulu District, Uganda',
-      target_amount: 75000,
-      raised_amount: 45000,
-      program_category: 'healthcare',
-      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 5000
-    },
-    {
-      id: '5',
-      title: 'Maternal Health Program - India',
-      description: 'Training community health workers and providing essential supplies.',
-      location: 'Rajasthan, India',
-      target_amount: 40000,
-      raised_amount: 28000,
-      program_category: 'healthcare',
-      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 2000
-    },
-    {
-      id: '6',
-      title: 'Well Drilling Project - Mali',
-      description: 'Drilling 10 new wells to provide clean water access to rural communities.',
-      location: 'Sikasso Region, Mali',
-      target_amount: 60000,
-      raised_amount: 42000,
-      program_category: 'clean-water',
-      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 3000
-    },
-    {
-      id: '7',
-      title: 'Water Treatment Facility - Guatemala',
-      description: 'Building a community water treatment facility for safe drinking water.',
-      location: 'Quiché Department, Guatemala',
-      target_amount: 80000,
-      raised_amount: 55000,
-      program_category: 'clean-water',
-      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 1500
-    },
-    {
-      id: '8',
-      title: 'Disaster-Resistant Homes - Philippines',
-      description: 'Building typhoon-resistant homes for families affected by natural disasters.',
-      location: 'Leyte Province, Philippines',
-      target_amount: 100000,
-      raised_amount: 65000,
-      program_category: 'housing',
-      image_url: 'https://images.pexels.com/photos/8293778/pexels-photo-8293778.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 50
-    },
-    {
-      id: '9',
-      title: 'Women\'s Microfinance Program - Nepal',
-      description: 'Providing microloans and business training to women entrepreneurs.',
-      location: 'Sindhupalchok District, Nepal',
-      target_amount: 30000,
-      raised_amount: 22000,
-      program_category: 'community-empowerment',
-      image_url: 'https://images.pexels.com/photos/7551659/pexels-photo-7551659.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 100
-    },
-    {
-      id: '10',
-      title: 'Solar Power Initiative - Tanzania',
-      description: 'Installing solar power systems in rural schools and health centers.',
-      location: 'Mwanza Region, Tanzania',
-      target_amount: 45000,
-      raised_amount: 30000,
-      program_category: 'innovation',
-      image_url: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
-      beneficiaries: 800
-    }
-  ]
-
   const programCategories = {
     education: { title: 'Education Initiative', color: 'blue' },
     healthcare: { title: 'Healthcare Access', color: 'red' },
@@ -161,14 +58,28 @@ export function Donate() {
   }
 
   useEffect(() => {
-    // In a real app, fetch projects from Supabase
-    setProjects(sampleProjects)
+    fetchProjects()
     
     // Auto-expand the selected program
     if (formData.selectedProgram) {
       setExpandedPrograms(new Set([formData.selectedProgram]))
     }
   }, [])
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setProjects(data || [])
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    }
+  }
 
   const handleAmountChange = (amount: string) => {
     setFormData({ ...formData, amount, customAmount: amount === 'custom' ? formData.customAmount : '' })

@@ -66,52 +66,19 @@ export function AdminPrograms() {
     { value: 'innovation', label: 'Innovation Lab', icon: Lightbulb }
   ]
 
-  // Sample programs data - in a real app, this would come from Supabase
-  const samplePrograms: Program[] = [
-    {
-      id: '1',
-      title: 'Education Initiative',
-      description: 'Providing quality education and learning resources to underserved communities worldwide.',
-      category: 'education',
-      image_url: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      featured: true,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    },
-    {
-      id: '2',
-      title: 'Healthcare Access',
-      description: 'Ensuring basic healthcare services reach remote and marginalized communities.',
-      category: 'healthcare',
-      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      featured: false,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    },
-    {
-      id: '3',
-      title: 'Clean Water Project',
-      description: 'Building sustainable water systems and sanitation facilities for communities in need.',
-      category: 'clean-water',
-      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      featured: false,
-      created_at: '2025-01-01T00:00:00',
-      updated_at: '2025-01-01T00:00:00'
-    }
-  ]
-
   useEffect(() => {
     fetchPrograms()
   }, [])
 
   const fetchPrograms = async () => {
     try {
-      // In a real app, this would fetch from Supabase programs table
-      // For now, using sample data
-      setPrograms(samplePrograms)
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setPrograms(data || [])
     } catch (error) {
       console.error('Error fetching programs:', error)
     } finally {
@@ -124,15 +91,22 @@ export function AdminPrograms() {
     setSubmitting(true)
     
     try {
-      // In a real app, this would insert into Supabase
-      const newProgramData: Program = {
-        id: Date.now().toString(),
-        ...newProgram,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      const { data, error } = await supabase
+        .from('programs')
+        .insert([{
+          title: newProgram.title,
+          description: newProgram.description,
+          category: newProgram.category,
+          image_url: newProgram.image_url || null,
+          published: newProgram.published,
+          featured: newProgram.featured
+        }])
+        .select()
+        .single()
 
-      setPrograms([newProgramData, ...programs])
+      if (error) throw error
+
+      setPrograms([data, ...programs])
       setNewProgram({
         title: '',
         description: '',
@@ -154,9 +128,15 @@ export function AdminPrograms() {
     setSubmitting(true)
     
     try {
-      // In a real app, this would update in Supabase
+      const { error } = await supabase
+        .from('programs')
+        .update(updates)
+        .eq('id', programId)
+
+      if (error) throw error
+      
       setPrograms(programs.map(program => 
-        program.id === programId ? { ...program, ...updates, updated_at: new Date().toISOString() } : program
+        program.id === programId ? { ...program, ...updates } : program
       ))
       setEditingProgram(null)
     } catch (error) {
@@ -175,6 +155,13 @@ export function AdminPrograms() {
     if (!confirm('Are you sure you want to delete this program? This will also affect related projects.')) return
 
     try {
+      const { error } = await supabase
+        .from('programs')
+        .delete()
+        .eq('id', programId)
+
+      if (error) throw error
+      
       setPrograms(programs.filter(program => program.id !== programId))
     } catch (error) {
       console.error('Error deleting program:', error)
