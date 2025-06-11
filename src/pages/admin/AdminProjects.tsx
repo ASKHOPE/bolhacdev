@@ -276,6 +276,12 @@ export function AdminProjects() {
     })
   }
 
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('all')
+    setProgramFilter('all')
+  }
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -468,7 +474,7 @@ export function AdminProjects() {
               {/* Image Gallery Section */}
               <div className="border-t pt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Image Gallery</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Project Image Gallery</h3>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <input
@@ -725,7 +731,7 @@ export function AdminProjects() {
               {/* Image Gallery Section */}
               <div className="border-t pt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Image Gallery</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Project Image Gallery</h3>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       <input
@@ -829,8 +835,8 @@ export function AdminProjects() {
       <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
         <button
           onClick={() => handleStatusFilterClick('all')}
-          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
-            statusFilter === 'all' ? 'ring-2 ring-blue-500' : ''
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'all' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
           }`}
         >
           <div className="flex items-center">
@@ -845,8 +851,8 @@ export function AdminProjects() {
         </button>
         <button
           onClick={() => handleStatusFilterClick('active')}
-          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
-            statusFilter === 'active' ? 'ring-2 ring-blue-500' : ''
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'active' ? 'ring-2 ring-blue-500 bg-green-50' : ''
           }`}
         >
           <div className="flex items-center">
@@ -863,8 +869,8 @@ export function AdminProjects() {
         </button>
         <button
           onClick={() => handleStatusFilterClick('upcoming')}
-          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
-            statusFilter === 'upcoming' ? 'ring-2 ring-blue-500' : ''
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'upcoming' ? 'ring-2 ring-blue-500 bg-yellow-50' : ''
           }`}
         >
           <div className="flex items-center">
@@ -881,8 +887,8 @@ export function AdminProjects() {
         </button>
         <button
           onClick={() => handleStatusFilterClick('published')}
-          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
-            statusFilter === 'published' ? 'ring-2 ring-blue-500' : ''
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'published' ? 'ring-2 ring-blue-500 bg-purple-50' : ''
           }`}
         >
           <div className="flex items-center">
@@ -899,8 +905,8 @@ export function AdminProjects() {
         </button>
         <button
           onClick={() => handleStatusFilterClick('featured')}
-          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
-            statusFilter === 'featured' ? 'ring-2 ring-blue-500' : ''
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'featured' ? 'ring-2 ring-blue-500 bg-indigo-50' : ''
           }`}
         >
           <div className="flex items-center">
@@ -930,9 +936,9 @@ export function AdminProjects() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
@@ -974,15 +980,14 @@ export function AdminProjects() {
             </select>
           </div>
           <button 
-            onClick={() => {
-              setSearchTerm('')
-              setStatusFilter('all')
-              setProgramFilter('all')
-            }}
+            onClick={clearAllFilters}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
-            Clear Filters
+            Clear All Filters
           </button>
+          <div className="text-sm text-gray-600 flex items-center">
+            Showing {filteredProjects.length} of {projects.length} projects
+          </div>
         </div>
       </div>
 
@@ -991,29 +996,45 @@ export function AdminProjects() {
         <div className="text-center py-12">
           <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Projects Found</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             {projects.length === 0 
               ? "No projects have been created yet. Create your first project to get started."
               : "No projects match your current search and filter criteria."
             }
           </p>
+          {projects.length > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all transform hover:scale-105">
               <div className="relative">
                 <img
                   src={project.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400'}
                   alt={project.title}
                   className="w-full h-48 object-cover"
                 />
-                {project.image_gallery && project.image_gallery.length > 0 && (
+                {project.image_gallery && project.show_gallery && project.image_gallery.length > 0 && (
                   <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs flex items-center">
                     <ImageIcon className="h-3 w-3 mr-1" />
-                    {project.image_gallery.length + 1}
+                    {project.image_gallery.length + 1} photos
                   </div>
                 )}
+                <div className="absolute top-2 right-2 flex space-x-1">
+                  {project.published && (
+                    <span className="bg-green-500 text-white px-2 py-1 rounded text-xs">Published</span>
+                  )}
+                  {project.featured && (
+                    <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs">Featured</span>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -1021,20 +1042,12 @@ export function AdminProjects() {
                     {project.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
                     {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                   </span>
-                  <div className="flex items-center space-x-1">
-                    {project.published && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Published
-                      </span>
-                    )}
-                    {project.featured && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Featured
-                      </span>
-                    )}
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Users className="h-4 w-4 mr-1" />
+                    {project.beneficiaries.toLocaleString()}
                   </div>
                 </div>
-                
+
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {project.title}
                 </h3>
@@ -1047,10 +1060,6 @@ export function AdminProjects() {
                   <div className="flex items-center">
                     <MapPin className="h-3 w-3 mr-1" />
                     {project.location}
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-3 w-3 mr-1" />
-                    {project.beneficiaries.toLocaleString()} beneficiaries
                   </div>
                   <div>
                     Program: {getProgramTitle(project.program_category)}
@@ -1069,7 +1078,7 @@ export function AdminProjects() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
-                      className="bg-blue-600 h-1.5 rounded-full"
+                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                       style={{ width: `${getProgressPercentage(project.raised_amount, project.target_amount)}%` }}
                     ></div>
                   </div>
@@ -1105,13 +1114,15 @@ export function AdminProjects() {
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={() => setEditingProject(project)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-blue-600 hover:text-blue-900 p-1"
+                      title="Edit Project"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button 
                       onClick={() => deleteProject(project.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 p-1"
+                      title="Delete Project"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
