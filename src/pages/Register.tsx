@@ -242,3 +242,5 @@ export default function Register() {
     </div>
   )
 }
+
+export { Register }
