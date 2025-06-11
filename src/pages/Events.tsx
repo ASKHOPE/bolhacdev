@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, MapPin, Clock, Users } from 'lucide-react'
+import { Calendar, MapPin, Clock, Users, Plus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Event {
@@ -9,13 +9,18 @@ interface Event {
   date: string
   location: string
   image_url: string | null
+  max_attendees: number | null
+  current_attendees: number
+  registration_fee: number
   published: boolean
+  featured: boolean
   created_at: string
 }
 
 export function Events() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [registering, setRegistering] = useState<string | null>(null)
 
   useEffect(() => {
     fetchEvents()
@@ -38,6 +43,41 @@ export function Events() {
     }
   }
 
+  const registerForEvent = async (eventId: string) => {
+    setRegistering(eventId)
+    try {
+      // In a real app, you'd handle event registration here
+      // For now, we'll just simulate the registration
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Update current attendees count
+      const event = events.find(e => e.id === eventId)
+      if (event && (event.max_attendees === null || event.current_attendees < event.max_attendees)) {
+        const { error } = await supabase
+          .from('events')
+          .update({ current_attendees: event.current_attendees + 1 })
+          .eq('id', eventId)
+
+        if (error) throw error
+
+        setEvents(events.map(e => 
+          e.id === eventId 
+            ? { ...e, current_attendees: e.current_attendees + 1 }
+            : e
+        ))
+        
+        alert('Successfully registered for the event!')
+      } else {
+        alert('Sorry, this event is full.')
+      }
+    } catch (error) {
+      console.error('Error registering for event:', error)
+      alert('Error registering for event. Please try again.')
+    } finally {
+      setRegistering(null)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', {
@@ -56,51 +96,13 @@ export function Events() {
     })
   }
 
-  // Sample events for when database is empty
-  const sampleEvents = [
-    {
-      id: '1',
-      title: 'Annual Charity Gala',
-      description: 'Join us for an evening of celebration and fundraising to support our education initiatives. Featuring dinner, entertainment, and inspiring stories from our beneficiaries.',
-      date: '2025-03-15T19:00:00',
-      location: 'Grand Ballroom, City Convention Center',
-      image_url: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      created_at: '2025-01-01T00:00:00',
-    },
-    {
-      id: '2',
-      title: 'Community Health Fair',
-      description: 'Free health screenings, vaccinations, and wellness education for the entire community. Healthcare professionals will be available for consultations.',
-      date: '2025-02-28T09:00:00',
-      location: 'Central Park Community Center',
-      image_url: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      created_at: '2025-01-01T00:00:00',
-    },
-    {
-      id: '3',
-      title: 'Volunteer Training Workshop',
-      description: 'Comprehensive training session for new volunteers. Learn about our programs, safety protocols, and how to make the biggest impact in your community service.',
-      date: '2025-02-20T10:00:00',
-      location: 'HopeFoundation Training Center',
-      image_url: 'https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      created_at: '2025-01-01T00:00:00',
-    },
-    {
-      id: '4',
-      title: 'Clean Water Project Launch',
-      description: 'Ceremony to launch our new clean water initiative in rural communities. Learn about the project and how you can contribute to bringing clean water to those in need.',
-      date: '2025-04-10T14:00:00',
-      location: 'Project Site, Rural District',
-      image_url: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-      published: true,
-      created_at: '2025-01-01T00:00:00',
-    },
-  ]
+  const isEventFull = (event: Event) => {
+    return event.max_attendees !== null && event.current_attendees >= event.max_attendees
+  }
 
-  const displayEvents = events.length > 0 ? events : sampleEvents
+  const isEventPast = (dateString: string) => {
+    return new Date(dateString) < new Date()
+  }
 
   if (loading) {
     return (
@@ -127,7 +129,7 @@ export function Events() {
       {/* Events Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {displayEvents.length === 0 ? (
+          {events.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Scheduled</h3>
@@ -135,13 +137,30 @@ export function Events() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {displayEvents.map((event) => (
+              {events.map((event) => (
                 <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                  <img
-                    src={event.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=800'}
-                    alt={event.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div className="relative">
+                    <img
+                      src={event.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                      alt={event.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    {event.featured && (
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                          Featured
+                        </span>
+                      </div>
+                    )}
+                    {isEventFull(event) && (
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                          Full
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">
                       {event.title}
@@ -163,10 +182,42 @@ export function Events() {
                         <MapPin className="h-4 w-4 mr-2 text-blue-600" />
                         <span className="text-sm">{event.location}</span>
                       </div>
+                      <div className="flex items-center justify-between text-gray-600">
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-2 text-blue-600" />
+                          <span className="text-sm">
+                            {event.current_attendees}/{event.max_attendees || '∞'} attendees
+                          </span>
+                        </div>
+                        {event.registration_fee > 0 && (
+                          <span className="text-sm font-medium text-green-600">
+                            ${event.registration_fee}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <button className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                      Register Now
+                    <button
+                      onClick={() => registerForEvent(event.id)}
+                      disabled={isEventFull(event) || isEventPast(event.date) || registering === event.id}
+                      className={`w-full px-4 py-2 font-medium rounded-lg transition-colors ${
+                        isEventFull(event) || isEventPast(event.date)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {registering === event.id ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Registering...
+                        </div>
+                      ) : isEventPast(event.date) ? (
+                        'Event Ended'
+                      ) : isEventFull(event) ? (
+                        'Event Full'
+                      ) : (
+                        'Register Now'
+                      )}
                     </button>
                   </div>
                 </div>
