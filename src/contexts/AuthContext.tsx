@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
       setProfile(data)
@@ -75,11 +75,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      return { error }
+    } catch (error) {
+      console.error('Error during sign in:', error)
+      return { error }
+    }
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -92,25 +97,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             full_name: fullName,
           },
-        },
+        }
       })
       
       if (authError) throw authError
       
-      // Create profile manually to ensure it exists immediately
+      // If we have a user, sign them in immediately
       if (authData.user) {
-        // Create profile manually
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            full_name: fullName,
-            role: 'user'
-          })
-          
-        if (profileError) throw profileError
-        
         // Sign in the user immediately after signup
         await supabase.auth.signInWithPassword({
           email,

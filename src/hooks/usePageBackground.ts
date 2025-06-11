@@ -28,11 +28,10 @@ export function usePageBackground() {
         .from('site_settings')
         .select('value')
         .eq('key', `page_bg_${pageName}`)
-        .single()
+        .maybeSingle()
 
       if (error) {
-        // Only log errors that are not 'PGRST116' (no rows returned)
-        // PGRST116 is expected when a page background setting doesn't exist
+        // Only log errors that are not related to no rows found
         if (error.code !== 'PGRST116') {
           console.error('Error fetching page background:', error)
         }
