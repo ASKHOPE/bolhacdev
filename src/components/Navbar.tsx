@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Heart, User, Settings, Sun, Moon, Monitor } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
   const { user, profile, signOut, isAdmin } = useAuth()
   const { theme, updateTheme } = useTheme()
+  const { getSetting } = useSiteSettings()
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -40,15 +42,27 @@ export function Navbar() {
   }
 
   const ThemeIcon = getThemeIcon()
+  const siteName = getSetting('site_name', 'HopeFoundation')
+  const logoUrl = getSetting('logo_url')
 
   return (
-    <nav className="bg-theme-background shadow-lg sticky top-0 z-50 border-b border-theme-border">
+    <nav className="bg-theme-background shadow-lg sticky top-0 z-50 border-b border-theme-border transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-theme-primary" />
-              <span className="text-xl font-bold text-theme-text">HopeFoundation</span>
+            <Link to="/" className="flex items-center space-x-2 group">
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={siteName}
+                  className="h-8 w-auto transition-transform duration-200 group-hover:scale-105"
+                />
+              ) : (
+                <Heart className="h-8 w-8 text-theme-primary transition-transform duration-200 group-hover:scale-105" />
+              )}
+              <span className="text-xl font-bold text-theme-text transition-colors duration-200 group-hover:text-theme-primary">
+                {siteName}
+              </span>
             </Link>
           </div>
 
@@ -58,9 +72,9 @@ export function Navbar() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-theme text-sm font-medium transition-all duration-200 ${
                   isActive(item.href)
-                    ? 'text-theme-primary bg-theme-surface'
+                    ? 'text-theme-primary bg-theme-surface shadow-sm'
                     : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
                 }`}
               >
@@ -71,7 +85,7 @@ export function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={cycleTheme}
-              className="p-2 rounded-md text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-colors"
+              className="p-2 rounded-theme text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200 transform hover:scale-105"
               title={`Current: ${theme.mode} mode. Click to cycle themes.`}
             >
               <ThemeIcon className="h-5 w-5" />
@@ -80,9 +94,9 @@ export function Navbar() {
             {/* Admin Panel Link - Always visible for now */}
             <Link
               to="/admin"
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center space-x-1 px-3 py-2 rounded-theme text-sm font-medium transition-all duration-200 ${
                 location.pathname.startsWith('/admin')
-                  ? 'text-theme-primary bg-theme-surface'
+                  ? 'text-theme-primary bg-theme-surface shadow-sm'
                   : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
               }`}
             >
@@ -94,14 +108,14 @@ export function Navbar() {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/dashboard"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-theme text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                 >
                   <User className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
                 <button
                   onClick={signOut}
-                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 rounded-theme text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 transform hover:scale-105"
                 >
                   Sign Out
                 </button>
@@ -110,13 +124,13 @@ export function Navbar() {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-md text-sm font-medium text-theme-text hover:text-theme-primary"
+                  className="px-4 py-2 rounded-theme text-sm font-medium text-theme-text hover:text-theme-primary transition-all duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-theme-primary hover:opacity-90 transition-colors"
+                  className="px-4 py-2 rounded-theme text-sm font-medium text-white bg-theme-primary hover:opacity-90 transition-all duration-200 transform hover:scale-105"
                 >
                   Sign Up
                 </Link>
@@ -129,7 +143,7 @@ export function Navbar() {
             {/* Mobile Theme Toggle */}
             <button
               onClick={cycleTheme}
-              className="p-2 rounded-md text-theme-text hover:text-theme-primary transition-colors"
+              className="p-2 rounded-theme text-theme-text hover:text-theme-primary transition-all duration-200"
               title={`Current: ${theme.mode} mode`}
             >
               <ThemeIcon className="h-5 w-5" />
@@ -137,7 +151,7 @@ export function Navbar() {
             
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-theme-text hover:text-theme-primary focus:outline-none focus:text-theme-primary"
+              className="text-theme-text hover:text-theme-primary focus:outline-none focus:text-theme-primary transition-all duration-200"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -152,7 +166,7 @@ export function Navbar() {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  className={`block px-3 py-2 rounded-theme text-base font-medium transition-all duration-200 ${
                     isActive(item.href)
                       ? 'text-theme-primary bg-theme-surface'
                       : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
@@ -166,7 +180,7 @@ export function Navbar() {
               {/* Admin Panel Link - Mobile */}
               <Link
                 to="/admin"
-                className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
+                className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                 onClick={() => setIsOpen(false)}
               >
                 Admin Panel
@@ -176,7 +190,7 @@ export function Navbar() {
                 <div className="space-y-1 pt-2 border-t border-theme-border">
                   <Link
                     to="/dashboard"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
+                    className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                     onClick={() => setIsOpen(false)}
                   >
                     Dashboard
@@ -186,7 +200,7 @@ export function Navbar() {
                       signOut()
                       setIsOpen(false)
                     }}
-                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
+                    className="block w-full text-left px-3 py-2 rounded-theme text-base font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
                   >
                     Sign Out
                   </button>
@@ -195,14 +209,14 @@ export function Navbar() {
                 <div className="space-y-1 pt-2 border-t border-theme-border">
                   <Link
                     to="/login"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
+                    className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                     onClick={() => setIsOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-white bg-theme-primary hover:opacity-90"
+                    className="block px-3 py-2 rounded-theme text-base font-medium text-white bg-theme-primary hover:opacity-90 transition-all duration-200"
                     onClick={() => setIsOpen(false)}
                   >
                     Sign Up

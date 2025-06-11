@@ -1,8 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Users, Heart, Globe, Award } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export function Home() {
+  const { getSetting } = useSiteSettings()
+  
+  const siteName = getSetting('site_name', 'HopeFoundation')
+  const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
+
   const stats = [
     { icon: Users, label: 'People Helped', value: '50,000+' },
     { icon: Globe, label: 'Countries', value: '25' },
@@ -29,9 +35,9 @@ export function Home() {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-theme-background">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <section className="relative bg-gradient-to-r from-theme-primary to-theme-accent text-white">
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
@@ -40,20 +46,19 @@ export function Home() {
               <span className="text-blue-200">Changing Lives</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-100">
-              Join us in our mission to build a better world through compassion, 
-              dedication, and sustainable community development.
+              {siteDescription}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/programs"
-                className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+                className="inline-flex items-center px-8 py-4 bg-white text-theme-primary font-semibold rounded-theme hover:bg-blue-50 transition-all duration-200 transform hover:scale-105"
               >
                 Explore Our Programs
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link
                 to="/donate"
-                className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-600 transition-colors"
+                className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-theme hover:bg-white hover:text-theme-primary transition-all duration-200 transform hover:scale-105"
               >
                 Donate Now
                 <Heart className="ml-2 h-5 w-5" />
@@ -64,16 +69,16 @@ export function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-theme-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full mb-4">
+              <div key={index} className="text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg">
                   <stat.icon className="h-8 w-8" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
+                <div className="text-3xl font-bold text-theme-text mb-2">{stat.value}</div>
+                <div className="text-theme-text-secondary">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -81,35 +86,35 @@ export function Home() {
       </section>
 
       {/* Programs Section */}
-      <section className="py-20">
+      <section className="py-20 bg-theme-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-4">
               Our Impact Programs
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-theme-text-secondary max-w-3xl mx-auto">
               We focus on sustainable solutions that create lasting change in communities worldwide.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {programs.map((program, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+              <div key={index} className="theme-card overflow-hidden group">
                 <img
                   src={program.image}
                   alt={program.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-xl font-semibold text-theme-text mb-3">
                     {program.title}
                   </h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-theme-text-secondary mb-4">
                     {program.description}
                   </p>
                   <Link
                     to="/programs"
-                    className="inline-flex items-center text-blue-600 font-medium hover:text-blue-700"
+                    className="inline-flex items-center text-theme-primary font-medium hover:text-theme-accent transition-colors duration-200"
                   >
                     Learn More
                     <ArrowRight className="ml-1 h-4 w-4" />
@@ -122,7 +127,7 @@ export function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600 text-white">
+      <section className="py-20 bg-theme-primary text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Make a Difference?
@@ -134,14 +139,14 @@ export function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/contact"
-              className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+              className="inline-flex items-center px-8 py-4 bg-white text-theme-primary font-semibold rounded-theme hover:bg-blue-50 transition-all duration-200 transform hover:scale-105"
             >
               Get Involved
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
               to="/about"
-              className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-600 transition-colors"
+              className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-theme hover:bg-white hover:text-theme-primary transition-all duration-200 transform hover:scale-105"
             >
               Learn About Us
             </Link>

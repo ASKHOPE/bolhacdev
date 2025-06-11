@@ -1,7 +1,13 @@
 import React from 'react'
 import { Users, Target, Award, Heart } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export function About() {
+  const { getSetting } = useSiteSettings()
+  
+  const siteName = getSetting('site_name', 'HopeFoundation')
+  const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
+
   const values = [
     {
       icon: Heart,
@@ -47,12 +53,12 @@ export function About() {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-theme-background">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">About HopeFoundation</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">About {siteName}</h1>
             <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100">
               Founded in 2010, we've been dedicated to creating sustainable change 
               in communities worldwide through innovative programs and partnerships.
@@ -62,30 +68,29 @@ export function About() {
       </section>
 
       {/* Mission Section */}
-      <section className="py-20">
+      <section className="py-20 bg-theme-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-6">
                 Our Mission
               </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                To empower communities worldwide by providing access to education, healthcare, 
-                and sustainable development opportunities that create lasting positive change.
+              <p className="text-lg text-theme-text-secondary mb-6">
+                {siteDescription}
               </p>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-theme-text-secondary mb-8">
                 We believe that every person deserves the opportunity to thrive, regardless of 
                 their circumstances. Through our comprehensive programs and dedicated partnerships, 
                 we work to break cycles of poverty and build stronger, more resilient communities.
               </p>
               <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-3xl font-bold text-blue-600 mb-2">15+</div>
-                  <div className="text-gray-600">Years of Impact</div>
+                <div className="text-center p-4 theme-card">
+                  <div className="text-3xl font-bold text-theme-primary mb-2">15+</div>
+                  <div className="text-theme-text-secondary">Years of Impact</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-blue-600 mb-2">25</div>
-                  <div className="text-gray-600">Countries Served</div>
+                <div className="text-center p-4 theme-card">
+                  <div className="text-3xl font-bold text-theme-primary mb-2">25</div>
+                  <div className="text-theme-text-secondary">Countries Served</div>
                 </div>
               </div>
             </div>
@@ -93,7 +98,7 @@ export function About() {
               <img
                 src="https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg?auto=compress&cs=tinysrgb&w=800"
                 alt="Our mission in action"
-                className="rounded-lg shadow-lg"
+                className="rounded-theme shadow-lg transition-transform duration-300 hover:scale-105"
               />
             </div>
           </div>
@@ -101,27 +106,27 @@ export function About() {
       </section>
 
       {/* Values Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-theme-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-4">
               Our Core Values
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-theme-text-secondary max-w-3xl mx-auto">
               These principles guide everything we do and shape our approach to creating positive change.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-lg text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
+              <div key={index} className="theme-card p-6 text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-theme-primary text-white rounded-full mb-4 transition-all duration-200 group-hover:scale-110">
                   <value.icon className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                <h3 className="text-xl font-semibold text-theme-text mb-3">
                   {value.title}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-theme-text-secondary">
                   {value.description}
                 </p>
               </div>
@@ -131,33 +136,33 @@ export function About() {
       </section>
 
       {/* Team Section */}
-      <section className="py-20">
+      <section className="py-20 bg-theme-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-theme-text mb-4">
               Meet Our Team
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg text-theme-text-secondary max-w-3xl mx-auto">
               Our dedicated team brings together diverse expertise and a shared passion for making a difference.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div key={index} className="theme-card overflow-hidden group">
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-theme-text mb-2">
                     {member.name}
                   </h3>
-                  <p className="text-blue-600 font-medium mb-3">
+                  <p className="text-theme-primary font-medium mb-3">
                     {member.role}
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-theme-text-secondary">
                     {member.bio}
                   </p>
                 </div>
@@ -168,26 +173,26 @@ export function About() {
       </section>
 
       {/* Impact Section */}
-      <section className="py-20 bg-blue-600 text-white">
+      <section className="py-20 bg-theme-primary text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Our Impact by the Numbers
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
-            <div>
-              <div className="text-4xl font-bold mb-2">50,000+</div>
+            <div className="group">
+              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">50,000+</div>
               <div className="text-blue-200">Lives Impacted</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">150+</div>
+            <div className="group">
+              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">150+</div>
               <div className="text-blue-200">Projects Completed</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">1,200+</div>
+            <div className="group">
+              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">1,200+</div>
               <div className="text-blue-200">Active Volunteers</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">$2.5M+</div>
+            <div className="group">
+              <div className="text-4xl font-bold mb-2 transition-transform duration-200 group-hover:scale-110">$2.5M+</div>
               <div className="text-blue-200">Funds Raised</div>
             </div>
           </div>

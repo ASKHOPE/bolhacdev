@@ -43,25 +43,64 @@ body {
   font-size: var(--font-size-base);
   background-color: var(--color-background);
   color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom utility classes */
-.bg-theme-primary { background-color: var(--color-primary); }
-.bg-theme-secondary { background-color: var(--color-secondary); }
-.bg-theme-accent { background-color: var(--color-accent); }
-.bg-theme-background { background-color: var(--color-background); }
-.bg-theme-surface { background-color: var(--color-surface); }
+.bg-theme-primary { 
+  background-color: var(--color-primary); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-secondary { 
+  background-color: var(--color-secondary); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-accent { 
+  background-color: var(--color-accent); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-background { 
+  background-color: var(--color-background); 
+  transition: background-color 0.3s ease;
+}
+.bg-theme-surface { 
+  background-color: var(--color-surface); 
+  transition: background-color 0.3s ease;
+}
 
-.text-theme-primary { color: var(--color-primary); }
-.text-theme-secondary { color: var(--color-secondary); }
-.text-theme-accent { color: var(--color-accent); }
-.text-theme-text { color: var(--color-text); }
-.text-theme-text-secondary { color: var(--color-text-secondary); }
+.text-theme-primary { 
+  color: var(--color-primary); 
+  transition: color 0.3s ease;
+}
+.text-theme-secondary { 
+  color: var(--color-secondary); 
+  transition: color 0.3s ease;
+}
+.text-theme-accent { 
+  color: var(--color-accent); 
+  transition: color 0.3s ease;
+}
+.text-theme-text { 
+  color: var(--color-text); 
+  transition: color 0.3s ease;
+}
+.text-theme-text-secondary { 
+  color: var(--color-text-secondary); 
+  transition: color 0.3s ease;
+}
 
-.border-theme-border { border-color: var(--color-border); }
-.border-theme-primary { border-color: var(--color-primary); }
+.border-theme-border { 
+  border-color: var(--color-border); 
+  transition: border-color 0.3s ease;
+}
+.border-theme-primary { 
+  border-color: var(--color-primary); 
+  transition: border-color 0.3s ease;
+}
 
-.rounded-theme { border-radius: var(--border-radius); }
+.rounded-theme { 
+  border-radius: var(--border-radius); 
+}
 
 /* Animation controls */
 .no-animations * {
@@ -82,6 +121,12 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   color: var(--color-text);
+  transition: all 0.3s ease;
+}
+
+.theme-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .theme-button {
@@ -89,11 +134,19 @@ body {
   color: white;
   border-radius: var(--border-radius);
   transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
 }
 
 .theme-button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-button:active {
+  transform: translateY(0);
 }
 
 .theme-input {
@@ -101,11 +154,59 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   color: var(--color-text);
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
 }
 
 .theme-input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* Enhanced form elements */
+input, textarea, select {
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button enhancements */
+button {
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Link enhancements */
+a {
+  transition: all 0.2s ease;
+}
+
+/* Card enhancements */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Responsive design helpers */
@@ -145,3 +246,85 @@ body {
     box-shadow: none !important;
   }
 }
+
+/* Typography enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+p {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Gradient backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+}
+
+/* Status colors */
+.status-success {
+  color: var(--color-success);
+}
+
+.status-warning {
+  color: var(--color-warning);
+}
+
+.status-error {
+  color: var(--color-error);
+}
+
+.status-info {
+  color: var(--color-info);
+}
+
+/* Utility classes for theme consistency */
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-accent { color: var(--color-accent); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-accent { background-color: var(--color-accent); }
+.bg-success { background-color: var(--color-success); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-error { background-color: var(--color-error); }
+.bg-info { background-color: var(--color-info); }
+
+.border-primary { border-color: var(--color-primary); }
+.border-secondary { border-color: var(--color-secondary); }
+.border-accent { border-color: var(--color-accent); }
+.border-success { border-color: var(--color-success); }
+.border-warning { border-color: var(--color-warning); }
+.border-error { border-color: var(--color-error); }
+.border-info { border-color: var(--color-info); }

@@ -21,6 +21,7 @@ import {
   EyeOff
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useSiteSettings } from '../../hooks/useSiteSettings'
 
 interface SystemSetting {
   id: string
@@ -38,6 +39,7 @@ export function AdminSettings() {
   const [saving, setSaving] = useState(false)
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'success' | 'error'>('unknown')
+  const { refetch: refetchSiteSettings } = useSiteSettings()
 
   const [formData, setFormData] = useState({
     general: {
@@ -200,6 +202,9 @@ export function AdminSettings() {
         if (error) throw error
       }
 
+      // Refresh site settings in the app
+      refetchSiteSettings()
+      
       alert('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
@@ -390,6 +395,9 @@ export function AdminSettings() {
                       onChange={(e) => updateSetting('general', 'siteName', e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This name will appear in the site header, footer, and browser tab.
+                    </p>
                   </div>
                   
                   <div>
@@ -419,6 +427,9 @@ export function AdminSettings() {
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This description appears throughout the site and in search engine results.
+                  </p>
                 </div>
                 
                 <div>

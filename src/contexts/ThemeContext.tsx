@@ -105,6 +105,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     loadThemeSettings()
     loadMaintenanceSettings()
     applySystemTheme()
+    
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (theme.mode === 'auto') {
+        applySystemTheme()
+      }
+    }
+    
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   useEffect(() => {
@@ -149,8 +160,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         borderRadius: (settings.theme_border_radius as any) || defaultTheme.borderRadius,
         fontSize: (settings.theme_font_size as any) || defaultTheme.fontSize,
         fontFamily: settings.theme_font_family || defaultTheme.fontFamily,
-        animations: settings.theme_animations === 'true',
-        shadows: settings.theme_shadows === 'true'
+        animations: settings.theme_animations !== 'false',
+        shadows: settings.theme_shadows !== 'false'
       }
 
       setTheme(loadedTheme)
@@ -203,8 +214,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const applyThemeToDOM = () => {
     const root = document.documentElement
     
+    // Determine effective colors based on mode
+    let effectiveColors = theme.colors
+    if (theme.mode === 'auto') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const baseColors = prefersDark ? defaultDarkColors : defaultLightColors
+      effectiveColors = { ...baseColors, ...theme.colors }
+    } else if (theme.mode === 'dark') {
+      effectiveColors = { ...defaultDarkColors, ...theme.colors }
+    }
+    
     // Apply CSS custom properties
-    Object.entries(theme.colors).forEach(([key, value]) => {
+    Object.entries(effectiveColors).forEach(([key, value]) => {
       root.style.setProperty(`--color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value)
     })
 
@@ -215,7 +236,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Apply theme class
     root.className = root.className.replace(/theme-\w+/g, '')
-    root.classList.add(`theme-${theme.mode}`)
+    
+    // Determine effective theme mode for class
+    let effectiveMode = theme.mode
+    if (theme.mode === 'auto') {
+      effectiveMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
+    
+    root.classList.add(`theme-${effectiveMode}`)
     
     if (!theme.animations) root.classList.add('no-animations')
     else root.classList.remove('no-animations')
@@ -245,14 +273,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const updateTheme = async (updates: Partial<ThemeConfig>) => {
     const newTheme = { ...theme, ...updates }
-    
-    // If colors are being updated and mode is auto, determine the appropriate base
-    if (updates.colors && theme.mode === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const baseColors = prefersDark ? defaultDarkColors : defaultLightColors
-      newTheme.colors = { ...baseColors, ...updates.colors }
-    }
-    
     setTheme(newTheme)
     
     // Save to database

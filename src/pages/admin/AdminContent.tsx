@@ -14,9 +14,11 @@ import {
   Settings,
   Palette,
   Type,
-  Link as LinkIcon
+  Link as LinkIcon,
+  RefreshCw
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useSiteSettings } from '../../hooks/useSiteSettings'
 
 interface SiteSetting {
   id: string
@@ -48,6 +50,7 @@ export function AdminContent() {
     description: '',
     is_public: true
   })
+  const { refetch: refetchSiteSettings } = useSiteSettings()
 
   const tabs = [
     { id: 'general', name: 'General', icon: Settings },
@@ -91,6 +94,9 @@ export function AdminContent() {
       setSettings([...settings, data])
       setNewSetting({ key: '', value: '', description: '', is_public: true })
       setShowAddForm(false)
+      
+      // Refresh site settings in the app
+      refetchSiteSettings()
     } catch (error) {
       console.error('Error adding setting:', error)
       alert('Error adding setting: ' + (error as Error).message)
@@ -122,6 +128,9 @@ export function AdminContent() {
       
       setEditingId(null)
       setEditValue('')
+      
+      // Refresh site settings in the app
+      refetchSiteSettings()
     } catch (error) {
       console.error('Error updating setting:', error)
       alert('Error updating setting: ' + (error as Error).message)
@@ -140,6 +149,9 @@ export function AdminContent() {
       setSettings(settings.map(setting => 
         setting.id === settingId ? { ...setting, is_public: !isPublic, updated_at: new Date().toISOString() } : setting
       ))
+      
+      // Refresh site settings in the app
+      refetchSiteSettings()
     } catch (error) {
       console.error('Error updating setting visibility:', error)
       alert('Error updating setting: ' + (error as Error).message)
@@ -158,6 +170,9 @@ export function AdminContent() {
       if (error) throw error
 
       setSettings(settings.filter(setting => setting.id !== settingId))
+      
+      // Refresh site settings in the app
+      refetchSiteSettings()
     } catch (error) {
       console.error('Error deleting setting:', error)
       alert('Error deleting setting: ' + (error as Error).message)
@@ -179,6 +194,8 @@ export function AdminContent() {
       // Update the setting with the image URL
       const setting = settings.find(s => s.key === settingKey)
       if (setting) {
+        setEditingId(setting.id)
+        setEditValue(imageUrl)
         await saveSetting(setting.id)
       } else {
         // Create new setting
@@ -198,6 +215,9 @@ export function AdminContent() {
 
           if (error) throw error
           setSettings([...settings, data])
+          
+          // Refresh site settings in the app
+          refetchSiteSettings()
         } catch (error) {
           console.error('Error adding image setting:', error)
         }
@@ -332,13 +352,22 @@ export function AdminContent() {
             <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
             <p className="text-gray-600 mt-2">Manage website content, branding, and settings</p>
           </div>
-          <button 
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Setting
-          </button>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={fetchSettings}
+              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </button>
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Setting
+            </button>
+          </div>
         </div>
       </div>
 
@@ -598,6 +627,53 @@ export function AdminContent() {
                 
                 {(() => {
                   const setting = getSetting('contact_phone')
+                  return setting ? (
+                    <div>
+                      {renderSettingInput(setting)}
+                      <div className="flex justify-end space-x-2 mt-3">
+                        {editingId === setting.id ? (
+                          <>
+                            <button
+                              onClick={() => saveSetting(setting.id)}
+                              className="p-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                            >
+                              <Save className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="p-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => startEditing(setting)}
+                            className="p-2 text-gray-600 hover:text-blue-600"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">Not set</div>
+                  )
+                })()}
+              </div>
+              
+              {/* Contact Address */}
+              <div className="border border-gray-200 rounded-lg p-4 md:col-span-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-900">Contact Address</h3>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Public
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">Organization physical address</p>
+                
+                {(() => {
+                  const setting = getSetting('contact_address')
                   return setting ? (
                     <div>
                       {renderSettingInput(setting)}
