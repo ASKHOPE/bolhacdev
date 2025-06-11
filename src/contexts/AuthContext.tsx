@@ -97,29 +97,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (authError) throw authError
       
-      // If email confirmation is enabled, we need to manually create the profile
-      // since the trigger might not run until email is confirmed
+      // Create profile manually to ensure it exists immediately
       if (authData.user) {
-        // Check if profile already exists
-        const { data: existingProfile } = await supabase
+        // Create profile manually
+        const { error: profileError } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('id', authData.user.id)
-          .single()
+          .insert({
+            id: authData.user.id,
+            email: email,
+            full_name: fullName,
+            role: 'user'
+          })
           
-        if (!existingProfile) {
-          // Create profile manually
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              email: email,
-              full_name: fullName,
-              role: 'user'
-            })
-            
-          if (profileError) throw profileError
-        }
+        if (profileError) throw profileError
+        
+        // Sign in the user immediately after signup
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
       }
       
       return { error: null }
