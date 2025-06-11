@@ -29,6 +29,8 @@ import { AdminContent } from './pages/admin/AdminContent'
 import { AdminSettings } from './pages/admin/AdminSettings'
 import { AdminContacts } from './pages/admin/AdminContacts'
 import { AdminNewsletter } from './pages/admin/AdminNewsletter'
+import { AdminPrograms } from './pages/admin/AdminPrograms'
+import { AdminProjects } from './pages/admin/AdminProjects'
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
             <Route path="/admin/*" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="programs" element={<AdminPrograms />} />
+              <Route path="projects" element={<AdminProjects />} />
               <Route path="events" element={<AdminEvents />} />
               <Route path="donations" element={<AdminDonations />} />
               <Route path="analytics" element={<AdminAnalytics />} />

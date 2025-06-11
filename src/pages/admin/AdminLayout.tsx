@@ -10,7 +10,9 @@ import {
   FileText,
   ArrowLeft,
   MessageSquare,
-  Mail
+  Mail,
+  FolderOpen,
+  Target
 } from 'lucide-react'
 
 export function AdminLayout() {
@@ -19,6 +21,8 @@ export function AdminLayout() {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Programs', href: '/admin/programs', icon: FolderOpen },
+    { name: 'Projects', href: '/admin/projects', icon: Target },
     { name: 'Events', href: '/admin/events', icon: Calendar },
     { name: 'Donations', href: '/admin/donations', icon: Heart },
     { name: 'Contacts', href: '/admin/contacts', icon: MessageSquare },
