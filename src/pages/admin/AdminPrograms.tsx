@@ -35,6 +35,7 @@ interface NewProgram {
   title: string
   description: string
   category: string
+  customCategory: string
   image_url: string
   published: boolean
   featured: boolean
@@ -44,7 +45,7 @@ export function AdminPrograms() {
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'featured'>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProgram, setEditingProgram] = useState<Program | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -52,18 +53,40 @@ export function AdminPrograms() {
     title: '',
     description: '',
     category: 'education',
+    customCategory: '',
     image_url: '',
     published: false,
     featured: false
   })
 
-  const categoryOptions = [
+  const defaultCategoryOptions = [
     { value: 'education', label: 'Education Initiative', icon: BookOpen },
     { value: 'healthcare', label: 'Healthcare Access', icon: Heart },
     { value: 'clean-water', label: 'Clean Water Project', icon: Droplets },
     { value: 'housing', label: 'Housing Development', icon: Home },
     { value: 'community-empowerment', label: 'Community Empowerment', icon: Users },
-    { value: 'innovation', label: 'Innovation Lab', icon: Lightbulb }
+    { value: 'innovation', label: 'Innovation Lab', icon: Lightbulb },
+    { value: 'custom', label: 'Add New Category...', icon: Plus }
+  ]
+
+  // Get unique categories from existing programs
+  const getExistingCategories = () => {
+    const existingCategories = [...new Set(programs.map(p => p.category))]
+    const customCategories = existingCategories.filter(cat => 
+      !defaultCategoryOptions.some(opt => opt.value === cat && opt.value !== 'custom')
+    )
+    
+    return customCategories.map(cat => ({
+      value: cat,
+      label: cat.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+      icon: FolderOpen
+    }))
+  }
+
+  const allCategoryOptions = [
+    ...defaultCategoryOptions.filter(opt => opt.value !== 'custom'),
+    ...getExistingCategories(),
+    { value: 'custom', label: 'Add New Category...', icon: Plus }
   ]
 
   useEffect(() => {
@@ -91,12 +114,23 @@ export function AdminPrograms() {
     setSubmitting(true)
     
     try {
+      // Determine the final category
+      const finalCategory = newProgram.category === 'custom' 
+        ? newProgram.customCategory.toLowerCase().replace(/\s+/g, '-')
+        : newProgram.category
+
+      if (newProgram.category === 'custom' && !newProgram.customCategory.trim()) {
+        alert('Please enter a custom category name')
+        setSubmitting(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('programs')
         .insert([{
           title: newProgram.title,
           description: newProgram.description,
-          category: newProgram.category,
+          category: finalCategory,
           image_url: newProgram.image_url || null,
           published: newProgram.published,
           featured: newProgram.featured
@@ -111,6 +145,7 @@ export function AdminPrograms() {
         title: '',
         description: '',
         category: 'education',
+        customCategory: '',
         image_url: '',
         published: false,
         featured: false
@@ -170,16 +205,38 @@ export function AdminPrograms() {
   }
 
   const getCategoryIcon = (category: string) => {
-    const categoryOption = categoryOptions.find(opt => opt.value === category)
+    const categoryOption = allCategoryOptions.find(opt => opt.value === category)
     return categoryOption ? categoryOption.icon : FolderOpen
+  }
+
+  const getCategoryLabel = (category: string) => {
+    const categoryOption = allCategoryOptions.find(opt => opt.value === category)
+    return categoryOption ? categoryOption.label : category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+  }
+
+  const handleStatusFilterClick = (filter: 'all' | 'published' | 'draft' | 'featured') => {
+    setStatusFilter(filter)
   }
 
   const filteredPrograms = programs.filter(program => {
     const matchesSearch = program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          program.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'published' && program.published) ||
-                         (statusFilter === 'draft' && !program.published)
+    
+    let matchesStatus = true
+    switch (statusFilter) {
+      case 'published':
+        matchesStatus = program.published
+        break
+      case 'draft':
+        matchesStatus = !program.published
+        break
+      case 'featured':
+        matchesStatus = program.featured
+        break
+      default:
+        matchesStatus = true
+    }
+    
     return matchesSearch && matchesStatus
   })
 
@@ -248,16 +305,35 @@ export function AdminPrograms() {
                 <select
                   required
                   value={newProgram.category}
-                  onChange={(e) => setNewProgram({...newProgram, category: e.target.value})}
+                  onChange={(e) => setNewProgram({...newProgram, category: e.target.value, customCategory: ''})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                 >
-                  {categoryOptions.map(option => (
+                  {allCategoryOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
               </div>
+              
+              {/* Custom Category Input */}
+              {newProgram.category === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Category Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newProgram.customCategory}
+                    onChange={(e) => setNewProgram({...newProgram, customCategory: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter new category name (e.g., Environmental Protection)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This will create a new category that can be used for future programs
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                 <input
@@ -358,18 +434,17 @@ export function AdminPrograms() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                <select
+                <input
+                  type="text"
                   required
                   value={editingProgram.category}
                   onChange={(e) => setEditingProgram({...editingProgram, category: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  {categoryOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Category (e.g., education, healthcare)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  You can edit the category directly or use kebab-case (e.g., environmental-protection)
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
@@ -427,9 +502,14 @@ export function AdminPrograms() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Stats - Now Clickable */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <button
+          onClick={() => handleStatusFilterClick('all')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'all' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100">
               <FolderOpen className="h-6 w-6 text-blue-600" />
@@ -439,8 +519,13 @@ export function AdminPrograms() {
               <p className="text-2xl font-bold text-gray-900">{programs.length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('published')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'published' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100">
               <Eye className="h-6 w-6 text-green-600" />
@@ -452,8 +537,13 @@ export function AdminPrograms() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('draft')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'draft' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-yellow-100">
               <EyeOff className="h-6 w-6 text-yellow-600" />
@@ -465,8 +555,13 @@ export function AdminPrograms() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('featured')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'featured' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100">
               <FolderOpen className="h-6 w-6 text-purple-600" />
@@ -478,7 +573,7 @@ export function AdminPrograms() {
               </p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Filters */}
@@ -500,12 +595,13 @@ export function AdminPrograms() {
             <Filter className="h-4 w-4 text-gray-400" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'published' | 'draft')}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Programs</option>
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
+              <option value="featured">Featured</option>
             </select>
           </div>
         </div>
@@ -562,7 +658,7 @@ export function AdminPrograms() {
                   </p>
                   
                   <div className="text-xs text-gray-500 mb-4">
-                    Category: {categoryOptions.find(opt => opt.value === program.category)?.label}
+                    Category: {getCategoryLabel(program.category)}
                   </div>
                   
                   <div className="flex items-center justify-between">
