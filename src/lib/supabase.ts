@@ -118,6 +118,68 @@ export type Database = {
           updated_at?: string
         }
       }
+      projects: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          location: string
+          target_amount: number
+          raised_amount: number | null
+          start_date: string
+          end_date: string
+          status: string
+          image_url: string | null
+          beneficiaries: number
+          program_category: string
+          published: boolean | null
+          featured: boolean | null
+          image_gallery: string[]
+          show_gallery: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          location: string
+          target_amount?: number
+          raised_amount?: number | null
+          start_date: string
+          end_date: string
+          status?: string
+          image_url?: string | null
+          beneficiaries?: number
+          program_category: string
+          published?: boolean | null
+          featured?: boolean | null
+          image_gallery?: string[]
+          show_gallery?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          location?: string
+          target_amount?: number
+          raised_amount?: number | null
+          start_date?: string
+          end_date?: string
+          status?: string
+          image_url?: string | null
+          beneficiaries?: number
+          program_category?: string
+          published?: boolean | null
+          featured?: boolean | null
+          image_gallery?: string[]
+          show_gallery?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
