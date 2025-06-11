@@ -3,10 +3,8 @@ import {
   Users, 
   Search, 
   Filter, 
-  MoreVertical, 
   Edit, 
-  Trash2, 
-  UserPlus,
+  Trash2,
   Shield,
   ShieldCheck,
   X,
@@ -26,27 +24,17 @@ interface User {
   updated_at: string
 }
 
-interface NewUserForm {
-  email: string
-  full_name: string
-  role: 'admin' | 'user'
-  phone: string
-  bio: string
-}
-
 export function AdminUsers() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all')
-  const [showAddForm, setShowAddForm] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [newUser, setNewUser] = useState<NewUserForm>({
-    email: '',
+  const [editForm, setEditForm] = useState({
     full_name: '',
-    role: 'user',
     phone: '',
-    bio: ''
+    bio: '',
+    role: 'user' as 'admin' | 'user'
   })
 
   useEffect(() => {
@@ -69,87 +57,91 @@ export function AdminUsers() {
     }
   }
 
-  const addUser = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      // First create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUser.email,
-        password: 'tempPassword123!', // You might want to generate this or send invite
-        email_confirm: true,
-        user_metadata: {
-          full_name: newUser.full_name
-        }
-      })
-
-      if (authError) throw authError
-
-      // Then create/update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          email: newUser.email,
-          full_name: newUser.full_name,
-          role: newUser.role,
-          phone: newUser.phone || null,
-          bio: newUser.bio || null
-        })
-
-      if (profileError) throw profileError
-
-      setNewUser({ email: '', full_name: '', role: 'user', phone: '', bio: '' })
-      setShowAddForm(false)
-      fetchUsers()
-    } catch (error) {
-      console.error('Error adding user:', error)
-      alert('Error adding user: ' + (error as Error).message)
-    }
-  }
-
-  const updateUser = async (userId: string, updates: Partial<User>) => {
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update({ role: newRole })
         .eq('id', userId)
 
       if (error) throw error
       
       setUsers(users.map(user => 
-        user.id === userId ? { ...user, ...updates } : user
+        user.id === userId ? { ...user, role: newRole } : user
       ))
-      setEditingUser(null)
     } catch (error) {
-      console.error('Error updating user:', error)
-      alert('Error updating user: ' + (error as Error).message)
+      console.error('Error updating user role:', error)
     }
   }
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
-    await updateUser(userId, { role: newRole })
+  const startEditing = (user: User) => {
+    setEditingUser(user)
+    setEditForm({
+      full_name: user.full_name || '',
+      phone: user.phone || '',
+      bio: user.bio || '',
+      role: user.role
+    })
+  }
+
+  const cancelEditing = () => {
+    setEditingUser(null)
+    setEditForm({
+      full_name: '',
+      phone: '',
+      bio: '',
+      role: 'user'
+    })
+  }
+
+  const saveUser = async () => {
+    if (!editingUser) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name || null,
+          phone: editForm.phone || null,
+          bio: editForm.bio || null,
+          role: editForm.role
+        })
+        .eq('id', editingUser.id)
+
+      if (error) throw error
+
+      setUsers(users.map(user => 
+        user.id === editingUser.id 
+          ? { 
+              ...user, 
+              full_name: editForm.full_name || null,
+              phone: editForm.phone || null,
+              bio: editForm.bio || null,
+              role: editForm.role
+            } 
+          : user
+      ))
+      
+      cancelEditing()
+    } catch (error) {
+      console.error('Error updating user:', error)
+    }
   }
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
 
     try {
-      // Delete from profiles first
-      const { error: profileError } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId)
 
-      if (profileError) throw profileError
-
-      // Delete from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-      if (authError) console.warn('Could not delete auth user:', authError)
+      if (error) throw error
       
       setUsers(users.filter(user => user.id !== userId))
     } catch (error) {
       console.error('Error deleting user:', error)
-      alert('Error deleting user: ' + (error as Error).message)
     }
   }
 
@@ -177,172 +169,14 @@ export function AdminUsers() {
             <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
             <p className="text-gray-600 mt-2">Manage user accounts and permissions</p>
           </div>
-          <button 
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </button>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> New users are created through the registration process. 
+              Use this panel to manage existing users.
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* Add User Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Add New User</h2>
-              <button onClick={() => setShowAddForm(false)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={addUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newUser.full_name}
-                  onChange={(e) => setNewUser({...newUser, full_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  value={newUser.role}
-                  onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'user'})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  value={newUser.phone}
-                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                <textarea
-                  value={newUser.bio}
-                  onChange={(e) => setNewUser({...newUser, bio: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Add User
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Edit User</h2>
-              <button onClick={() => setEditingUser(null)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault()
-              updateUser(editingUser.id, {
-                full_name: editingUser.full_name,
-                phone: editingUser.phone,
-                bio: editingUser.bio,
-                role: editingUser.role
-              })
-            }} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={editingUser.full_name || ''}
-                  onChange={(e) => setEditingUser({...editingUser, full_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  value={editingUser.role}
-                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value as 'admin' | 'user'})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  value={editingUser.phone || ''}
-                  onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                <textarea
-                  value={editingUser.bio || ''}
-                  onChange={(e) => setEditingUser({...editingUser, bio: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -502,7 +336,7 @@ export function AdminUsers() {
                         {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                       </button>
                       <button 
-                        onClick={() => setEditingUser(user)}
+                        onClick={() => startEditing(user)}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         <Edit className="h-4 w-4" />
@@ -521,6 +355,94 @@ export function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit User</h3>
+              <button
+                onClick={cancelEditing}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bio
+                </label>
+                <textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter bio"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as 'admin' | 'user' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={cancelEditing}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveUser}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
