@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle, ExternalLink, X, Image as ImageIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Project {
@@ -18,64 +18,53 @@ interface Project {
   program_category: string
 }
 
+interface Program {
+  id: string
+  title: string
+  description: string
+  category: string
+}
+
 export function ProgramDetail() {
   const { programId } = useParams<{ programId: string }>()
   const [projects, setProjects] = useState<Project[]>([])
+  const [program, setProgram] = useState<Program | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
-  const programInfo = {
-    education: {
-      title: 'Education Initiative',
-      description: 'Providing quality education and learning resources to underserved communities worldwide.',
-      color: 'blue'
-    },
-    healthcare: {
-      title: 'Healthcare Access',
-      description: 'Ensuring basic healthcare services reach remote and marginalized communities.',
-      color: 'red'
-    },
-    'clean-water': {
-      title: 'Clean Water Project',
-      description: 'Building sustainable water systems and sanitation facilities for communities in need.',
-      color: 'cyan'
-    },
-    housing: {
-      title: 'Housing Development',
-      description: 'Providing safe, affordable housing solutions for families in crisis.',
-      color: 'green'
-    },
-    'community-empowerment': {
-      title: 'Community Empowerment',
-      description: 'Supporting local leadership and economic development initiatives.',
-      color: 'purple'
-    },
-    innovation: {
-      title: 'Innovation Lab',
-      description: 'Developing technology solutions for humanitarian challenges.',
-      color: 'yellow'
-    }
-  }
-
   useEffect(() => {
     if (programId) {
-      fetchProjects()
+      fetchData()
     }
   }, [programId])
 
-  const fetchProjects = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('program_category', programId)
-        .eq('published', true)
-        .order('created_at', { ascending: false })
+      // Fetch program details and projects
+      const [programResult, projectsResult] = await Promise.all([
+        supabase
+          .from('programs')
+          .select('*')
+          .eq('category', programId)
+          .eq('published', true)
+          .single(),
+        supabase
+          .from('projects')
+          .select('*')
+          .eq('program_category', programId)
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+      ])
 
-      if (error) throw error
-      setProjects(data || [])
+      if (programResult.error && programResult.error.code !== 'PGRST116') {
+        throw programResult.error
+      }
+      if (projectsResult.error) throw projectsResult.error
+
+      setProgram(programResult.data)
+      setProjects(projectsResult.data || [])
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -98,7 +87,34 @@ export function ProgramDetail() {
     }
   }
 
-  const currentProgram = programId ? programInfo[programId as keyof typeof programInfo] : null
+  // Sample additional images for project details
+  const getProjectImages = (projectId: string) => {
+    const imageCollections = [
+      [
+        'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/5427674/pexels-photo-5427674.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/8923080/pexels-photo-8923080.jpeg?auto=compress&cs=tinysrgb&w=800'
+      ],
+      [
+        'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/4386467/pexels-photo-4386467.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/6303776/pexels-photo-6303776.jpeg?auto=compress&cs=tinysrgb&w=800'
+      ],
+      [
+        'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/6962026/pexels-photo-6962026.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/6962028/pexels-photo-6962028.jpeg?auto=compress&cs=tinysrgb&w=800'
+      ]
+    ]
+    
+    // Use project ID hash to consistently select image collection
+    const hash = projectId.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+    
+    return imageCollections[Math.abs(hash) % imageCollections.length]
+  }
 
   if (loading) {
     return (
@@ -108,7 +124,7 @@ export function ProgramDetail() {
     )
   }
 
-  if (!currentProgram || !programId) {
+  if (!program && !programId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -119,6 +135,13 @@ export function ProgramDetail() {
         </div>
       </div>
     )
+  }
+
+  // Fallback program info if not found in database
+  const displayProgram = program || {
+    title: programId?.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Program',
+    description: 'Comprehensive initiatives designed to create lasting change and empower communities worldwide.',
+    category: programId || ''
   }
 
   return (
@@ -136,10 +159,10 @@ export function ProgramDetail() {
           
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              {currentProgram.title}
+              {displayProgram.title}
             </h1>
             <p className="text-xl text-blue-100 mb-6">
-              {currentProgram.description}
+              {displayProgram.description}
             </p>
             <div className="flex flex-wrap gap-4">
               <div className="bg-white/10 rounded-lg px-4 py-2">
@@ -269,10 +292,10 @@ export function ProgramDetail() {
         </div>
       </section>
 
-      {/* Project Detail Modal */}
+      {/* Enhanced Project Detail Modal */}
       {selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="relative">
               <img
                 src={selectedProject.image_url}
@@ -283,7 +306,7 @@ export function ProgramDetail() {
                 onClick={() => setSelectedProject(null)}
                 className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
               >
-                <ArrowLeft className="h-5 w-5 transform rotate-45" />
+                <X className="h-5 w-5" />
               </button>
             </div>
             
@@ -299,82 +322,136 @@ export function ProgramDetail() {
                 </div>
               </div>
 
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">
                 {selectedProject.title}
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-3">
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="h-5 w-5 mr-3 text-blue-600" />
-                    <span>{selectedProject.location}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="h-5 w-5 mr-3 text-blue-600" />
-                    <span>
-                      {new Date(selectedProject.start_date).toLocaleDateString()} - {new Date(selectedProject.end_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Target className="h-5 w-5 mr-3 text-blue-600" />
-                    <span>Target: ${selectedProject.target_amount.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Funding Progress</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Raised: ${selectedProject.raised_amount.toLocaleString()}</span>
-                      <span>Goal: ${selectedProject.target_amount.toLocaleString()}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-gray-600">
+                      <MapPin className="h-5 w-5 mr-3 text-blue-600" />
+                      <span>{selectedProject.location}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div
-                        className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount)}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-center">
-                      <span className="text-lg font-bold text-blue-600">
-                        {getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount).toFixed(0)}% Complete
+                    <div className="flex items-center text-gray-600">
+                      <Calendar className="h-5 w-5 mr-3 text-blue-600" />
+                      <span>
+                        {new Date(selectedProject.start_date).toLocaleDateString()} - {new Date(selectedProject.end_date).toLocaleDateString()}
                       </span>
                     </div>
+                    <div className="flex items-center text-gray-600">
+                      <Target className="h-5 w-5 mr-3 text-blue-600" />
+                      <span>Target: ${selectedProject.target_amount.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">Project Description</h3>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      {selectedProject.description}
+                    </p>
+                    <p className="text-gray-600 leading-relaxed">
+                      This project represents our commitment to creating sustainable change in the community. 
+                      Through careful planning and community engagement, we aim to deliver lasting impact that 
+                      will benefit generations to come. Your support helps us turn this vision into reality.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-blue-50 rounded-lg p-6">
+                    <h3 className="font-semibold text-gray-900 mb-4">Funding Progress</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Raised: ${selectedProject.raised_amount.toLocaleString()}</span>
+                        <span>Goal: ${selectedProject.target_amount.toLocaleString()}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-4">
+                        <div
+                          className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+                          style={{ width: `${getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount)}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {getProgressPercentage(selectedProject.raised_amount, selectedProject.target_amount).toFixed(0)}% Complete
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 rounded-lg p-6">
+                    <h3 className="font-semibold text-gray-900 mb-4">Project Impact</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          {selectedProject.beneficiaries.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-green-700">People Served</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          {Math.ceil((new Date(selectedProject.end_date).getTime() - new Date(selectedProject.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30))}
+                        </div>
+                        <div className="text-sm text-green-700">Months Duration</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Project Description</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {selectedProject.description}
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Project Impact</h3>
+              {/* Project Gallery */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <ImageIcon className="h-5 w-5 mr-2" />
+                  Project Gallery
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600 mb-1">
-                      {selectedProject.beneficiaries.toLocaleString()}
+                  {getProjectImages(selectedProject.id).map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={imageUrl}
+                        alt={`${selectedProject.title} - Image ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                        <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
-                    <div className="text-sm text-green-700">People Served</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Achievements */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Key Achievements & Milestones</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-gray-900">Community Engagement</p>
+                      <p className="text-sm text-gray-600">Successfully engaged with local community leaders and stakeholders</p>
+                    </div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600 mb-1">
-                      ${selectedProject.raised_amount.toLocaleString()}
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-gray-900">Resource Planning</p>
+                      <p className="text-sm text-gray-600">Completed comprehensive resource assessment and planning phase</p>
                     </div>
-                    <div className="text-sm text-blue-700">Funds Raised</div>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-600 mb-1">
-                      {Math.ceil((new Date(selectedProject.end_date).getTime() - new Date(selectedProject.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30))}
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-gray-900">Partnership Development</p>
+                      <p className="text-sm text-gray-600">Established partnerships with local organizations and government agencies</p>
                     </div>
-                    <div className="text-sm text-purple-700">Months Duration</div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex space-x-4">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                 <Link
                   to={`/donate?project=${selectedProject.id}`}
                   className="flex-1 flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"

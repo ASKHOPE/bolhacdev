@@ -37,6 +37,12 @@ interface Project {
   updated_at: string
 }
 
+interface Program {
+  id: string
+  title: string
+  category: string
+}
+
 interface NewProject {
   title: string
   description: string
@@ -54,6 +60,7 @@ interface NewProject {
 
 export function AdminProjects() {
   const [projects, setProjects] = useState<Project[]>([])
+  const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
@@ -71,19 +78,10 @@ export function AdminProjects() {
     status: 'upcoming',
     image_url: '',
     beneficiaries: 0,
-    program_category: 'education',
+    program_category: '',
     published: false,
     featured: false
   })
-
-  const programCategories = [
-    { value: 'education', label: 'Education Initiative' },
-    { value: 'healthcare', label: 'Healthcare Access' },
-    { value: 'clean-water', label: 'Clean Water Project' },
-    { value: 'housing', label: 'Housing Development' },
-    { value: 'community-empowerment', label: 'Community Empowerment' },
-    { value: 'innovation', label: 'Innovation Lab' }
-  ]
 
   const statusOptions = [
     { value: 'upcoming', label: 'Upcoming' },
@@ -92,20 +90,29 @@ export function AdminProjects() {
   ]
 
   useEffect(() => {
-    fetchProjects()
+    fetchData()
   }, [])
 
-  const fetchProjects = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Fetch both projects and programs
+      const [projectsResult, programsResult] = await Promise.all([
+        supabase.from('projects').select('*').order('created_at', { ascending: false }),
+        supabase.from('programs').select('id, title, category').eq('published', true)
+      ])
 
-      if (error) throw error
-      setProjects(data || [])
+      if (projectsResult.error) throw projectsResult.error
+      if (programsResult.error) throw programsResult.error
+
+      setProjects(projectsResult.data || [])
+      setPrograms(programsResult.data || [])
+
+      // Set default category if programs exist
+      if (programsResult.data && programsResult.data.length > 0 && !newProject.program_category) {
+        setNewProject(prev => ({ ...prev, program_category: programsResult.data[0].category }))
+      }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -149,7 +156,7 @@ export function AdminProjects() {
         status: 'upcoming',
         image_url: '',
         beneficiaries: 0,
-        program_category: 'education',
+        program_category: programs.length > 0 ? programs[0].category : '',
         published: false,
         featured: false
       })
@@ -222,6 +229,11 @@ export function AdminProjects() {
       default:
         return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const getProgramTitle = (category: string) => {
+    const program = programs.find(p => p.category === category)
+    return program ? program.title : category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   }
 
   const filteredProjects = projects.filter(project => {
@@ -314,9 +326,10 @@ export function AdminProjects() {
                     onChange={(e) => setNewProject({...newProject, program_category: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                   >
-                    {programCategories.map(category => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
+                    <option value="">Select a program</option>
+                    {programs.map(program => (
+                      <option key={program.id} value={program.category}>
+                        {program.title}
                       </option>
                     ))}
                   </select>
@@ -436,6 +449,203 @@ export function AdminProjects() {
         </div>
       )}
 
+      {/* Edit Project Modal */}
+      {editingProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Edit Project</h2>
+              <button onClick={() => setEditingProject(null)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              updateProject(editingProject.id, {
+                title: editingProject.title,
+                description: editingProject.description,
+                location: editingProject.location,
+                target_amount: editingProject.target_amount,
+                start_date: editingProject.start_date,
+                end_date: editingProject.end_date,
+                status: editingProject.status,
+                image_url: editingProject.image_url,
+                beneficiaries: editingProject.beneficiaries,
+                program_category: editingProject.program_category,
+                published: editingProject.published,
+                featured: editingProject.featured
+              })
+            }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProject.title}
+                    onChange={(e) => setEditingProject({...editingProject, title: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                  <textarea
+                    required
+                    value={editingProject.description}
+                    onChange={(e) => setEditingProject({...editingProject, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProject.location}
+                    onChange={(e) => setEditingProject({...editingProject, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Program Category *</label>
+                  <select
+                    required
+                    value={editingProject.program_category}
+                    onChange={(e) => setEditingProject({...editingProject, program_category: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    {programs.map(program => (
+                      <option key={program.id} value={program.category}>
+                        {program.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Amount ($) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={editingProject.target_amount}
+                    onChange={(e) => setEditingProject({...editingProject, target_amount: parseInt(e.target.value)})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Raised Amount ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editingProject.raised_amount}
+                    onChange={(e) => setEditingProject({...editingProject, raised_amount: parseInt(e.target.value)})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Beneficiaries *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={editingProject.beneficiaries}
+                    onChange={(e) => setEditingProject({...editingProject, beneficiaries: parseInt(e.target.value)})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editingProject.start_date}
+                    onChange={(e) => setEditingProject({...editingProject, start_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editingProject.end_date}
+                    onChange={(e) => setEditingProject({...editingProject, end_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                  <select
+                    required
+                    value={editingProject.status}
+                    onChange={(e) => setEditingProject({...editingProject, status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    {statusOptions.map(status => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    value={editingProject.image_url || ''}
+                    onChange={(e) => setEditingProject({...editingProject, image_url: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="edit_published"
+                    checked={editingProject.published}
+                    onChange={(e) => setEditingProject({...editingProject, published: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_published" className="ml-2 block text-sm text-gray-900">
+                    Published
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="edit_featured"
+                    checked={editingProject.featured}
+                    onChange={(e) => setEditingProject({...editingProject, featured: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_featured" className="ml-2 block text-sm text-gray-900">
+                    Featured project
+                  </label>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingProject(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -535,9 +745,9 @@ export function AdminProjects() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Programs</option>
-              {programCategories.map(category => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
+              {programs.map(program => (
+                <option key={program.id} value={program.category}>
+                  {program.title}
                 </option>
               ))}
             </select>
@@ -614,7 +824,7 @@ export function AdminProjects() {
                     {project.beneficiaries.toLocaleString()} beneficiaries
                   </div>
                   <div>
-                    Program: {programCategories.find(c => c.value === project.program_category)?.label}
+                    Program: {getProgramTitle(project.program_category)}
                   </div>
                 </div>
 
