@@ -8,7 +8,8 @@ import {
   Shield,
   ShieldCheck,
   X,
-  Save
+  Save,
+  RefreshCw
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -152,6 +153,10 @@ export function AdminUsers() {
     return matchesSearch && matchesRole
   })
 
+  const handleStatClick = (filter: 'all' | 'admin' | 'user') => {
+    setRoleFilter(filter)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -169,18 +174,24 @@ export function AdminUsers() {
             <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
             <p className="text-gray-600 mt-2">Manage user accounts and permissions</p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> New users are created through the registration process. 
-              Use this panel to manage existing users.
-            </p>
-          </div>
+          <button 
+            onClick={fetchUsers}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Clickable Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <button
+          onClick={() => handleStatClick('all')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            roleFilter === 'all' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100">
               <Users className="h-6 w-6 text-blue-600" />
@@ -190,8 +201,13 @@ export function AdminUsers() {
               <p className="text-2xl font-bold text-gray-900">{users.length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatClick('admin')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            roleFilter === 'admin' ? 'ring-2 ring-blue-500 bg-green-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100">
               <ShieldCheck className="h-6 w-6 text-green-600" />
@@ -203,8 +219,13 @@ export function AdminUsers() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatClick('user')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            roleFilter === 'user' ? 'ring-2 ring-blue-500 bg-purple-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100">
               <Shield className="h-6 w-6 text-purple-600" />
@@ -216,7 +237,7 @@ export function AdminUsers() {
               </p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Filters */}
@@ -246,6 +267,17 @@ export function AdminUsers() {
               <option value="user">Users</option>
             </select>
           </div>
+          {(roleFilter !== 'all' || searchTerm) && (
+            <button
+              onClick={() => {
+                setRoleFilter('all')
+                setSearchTerm('')
+              }}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 

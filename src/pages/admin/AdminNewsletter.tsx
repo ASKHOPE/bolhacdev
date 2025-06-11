@@ -10,7 +10,11 @@ import {
   Users,
   TrendingUp,
   X,
-  Plus
+  Plus,
+  BarChart3,
+  Eye,
+  EyeOff,
+  RefreshCw
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -35,6 +39,7 @@ export function AdminNewsletter() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true)
   const [newSubscriber, setNewSubscriber] = useState<NewSubscriber>({
     email: '',
     name: ''
@@ -120,6 +125,10 @@ export function AdminNewsletter() {
     }
   }
 
+  const handleStatClick = (filter: 'all' | 'active' | 'inactive') => {
+    setStatusFilter(filter)
+  }
+
   const filteredSubscribers = subscribers.filter(subscriber => {
     const matchesSearch = subscriber.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (subscriber.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
@@ -150,6 +159,13 @@ export function AdminNewsletter() {
             <p className="text-gray-600 mt-2">Manage newsletter subscribers and campaigns</p>
           </div>
           <div className="flex items-center space-x-4">
+            <button 
+              onClick={fetchSubscribers}
+              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </button>
             <button 
               onClick={() => setShowAddForm(true)}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -219,9 +235,36 @@ export function AdminNewsletter() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Analytics Toggle */}
+      <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <BarChart3 className="h-6 w-6 text-blue-600 mr-3" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Newsletter Analytics</h2>
+              <p className="text-sm text-gray-600">Track subscriber growth, open rates, and engagement</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={analyticsEnabled}
+              onChange={() => setAnalyticsEnabled(!analyticsEnabled)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      </div>
+
+      {/* Stats - Now Clickable */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <button
+          onClick={() => handleStatClick('all')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'all' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100">
               <Users className="h-6 w-6 text-blue-600" />
@@ -231,8 +274,13 @@ export function AdminNewsletter() {
               <p className="text-2xl font-bold text-gray-900">{subscribers.length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatClick('active')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'active' ? 'ring-2 ring-blue-500 bg-green-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100">
               <UserPlus className="h-6 w-6 text-green-600" />
@@ -242,8 +290,13 @@ export function AdminNewsletter() {
               <p className="text-2xl font-bold text-gray-900">{activeSubscribers}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatClick('inactive')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-all transform hover:scale-105 ${
+            statusFilter === 'inactive' ? 'ring-2 ring-blue-500 bg-red-50' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-red-100">
               <UserMinus className="h-6 w-6 text-red-600" />
@@ -253,7 +306,7 @@ export function AdminNewsletter() {
               <p className="text-2xl font-bold text-gray-900">{inactiveSubscribers}</p>
             </div>
           </div>
-        </div>
+        </button>
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100">
@@ -266,6 +319,68 @@ export function AdminNewsletter() {
           </div>
         </div>
       </div>
+
+      {/* Analytics Section - Conditionally Rendered */}
+      {analyticsEnabled && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Subscriber Analytics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Growth Chart */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Subscriber Growth</h3>
+              <div className="h-64 flex items-end justify-between space-x-2">
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, index) => {
+                  const height = [40, 55, 60, 75, 85, 100][index]
+                  return (
+                    <div key={month} className="flex flex-col items-center flex-1">
+                      <div 
+                        className="bg-blue-500 w-full rounded-t"
+                        style={{ height: `${height}%` }}
+                      ></div>
+                      <span className="text-xs text-gray-600 mt-2">{month}</span>
+                      <span className="text-xs text-gray-500">{Math.floor(height * 1.2)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            
+            {/* Engagement Chart */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Email Engagement</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">Open Rate</span>
+                    <span className="text-sm text-gray-600">68%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '68%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">Click Rate</span>
+                    <span className="text-sm text-gray-600">42%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '42%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">Unsubscribe Rate</span>
+                    <span className="text-sm text-gray-600">2.3%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-red-600 h-2 rounded-full" style={{ width: '2.3%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Campaign Builder */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -339,6 +454,17 @@ export function AdminNewsletter() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+          {(statusFilter !== 'all' || searchTerm) && (
+            <button
+              onClick={() => {
+                setStatusFilter('all')
+                setSearchTerm('')
+              }}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 

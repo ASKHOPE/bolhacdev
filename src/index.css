@@ -38,6 +38,8 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #06b6d4;
+  --color-title: #f1f5f9;
+  --color-subtitle: #94a3b8;
 }
 
 /* Base styles using CSS variables */
@@ -126,6 +128,14 @@ body.has-page-background {
 }
 .text-theme-info { 
   color: var(--color-info); 
+  transition: color 0.3s ease;
+}
+.text-theme-title {
+  color: var(--color-title);
+  transition: color 0.3s ease;
+}
+.text-theme-subtitle {
+  color: var(--color-subtitle);
   transition: color 0.3s ease;
 }
 

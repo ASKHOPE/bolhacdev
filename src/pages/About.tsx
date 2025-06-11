@@ -2,17 +2,21 @@ import React from 'react'
 import { Users, Target, Award, Heart } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { useSiteStats } from '../hooks/useSiteStats'
+import { useTheme } from '../contexts/ThemeContext'
 
 const iconMap = {
   Users,
   Target,
   Award,
-  Heart
+  Heart,
+  Calendar: (props: any) => <span className="calendar-icon" {...props} />,
+  Globe: (props: any) => <span className="globe-icon" {...props} />
 }
 
 export function About() {
   const { getSetting } = useSiteSettings()
   const { getStatsByPage, loading: statsLoading } = useSiteStats()
+  const { theme } = useTheme()
   
   const siteName = getSetting('site_name', 'HopeFoundation')
   const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
@@ -69,8 +73,8 @@ export function About() {
       <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white transition-colors duration-300 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">About {siteName}</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in text-theme-title">About {siteName}</h1>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-theme-subtitle animate-fade-in-delay">
               Founded in 2010, we've been dedicated to creating sustainable change 
               in communities worldwide through innovative programs and partnerships.
             </p>
@@ -209,25 +213,25 @@ export function About() {
       {/* Impact Section */}
       <section className="py-20 bg-theme-primary text-white transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-theme-title">
             Our Impact by the Numbers
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">50,000+</div>
-              <div className="text-blue-200">Lives Impacted</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-theme-subtitle">50,000+</div>
+              <div className="text-theme-subtitle">Lives Impacted</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">150+</div>
-              <div className="text-blue-200">Projects Completed</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-theme-subtitle">150+</div>
+              <div className="text-theme-subtitle">Projects Completed</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">1,200+</div>
-              <div className="text-blue-200">Active Volunteers</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-theme-subtitle">1,200+</div>
+              <div className="text-theme-subtitle">Active Volunteers</div>
             </div>
             <div className="group">
-              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-200">$2.5M+</div>
-              <div className="text-blue-200">Funds Raised</div>
+              <div className="text-4xl font-bold mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-theme-subtitle">$2.5M+</div>
+              <div className="text-theme-subtitle">Funds Raised</div>
             </div>
           </div>
         </div>

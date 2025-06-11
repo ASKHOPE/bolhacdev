@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Users, Heart, Globe, Award, Calendar } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { useSiteStats } from '../hooks/useSiteStats'
+import { useTheme } from '../contexts/ThemeContext'
 
 const iconMap = {
   Users,
@@ -15,6 +16,7 @@ const iconMap = {
 export function Home() {
   const { getSetting } = useSiteSettings()
   const { getStatsByPage, loading: statsLoading } = useSiteStats()
+  const { theme } = useTheme()
   
   const siteName = getSetting('site_name', 'HopeFoundation')
   const siteDescription = getSetting('site_description', 'Creating positive change in communities worldwide through education, healthcare, and sustainable development programs.')
@@ -46,11 +48,11 @@ export function Home() {
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in text-theme-title">
               Creating Hope, <br />
-              <span className="text-blue-200">Changing Lives</span>
+              <span className="text-theme-subtitle">Changing Lives</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-theme-subtitle animate-fade-in-delay">
               {siteDescription}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-delay-2">
@@ -152,10 +154,10 @@ export function Home() {
       {/* CTA Section */}
       <section className="py-20 bg-theme-primary text-white transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-theme-title">
             Ready to Make a Difference?
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-blue-100">
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-theme-subtitle">
             Whether through volunteering, donating, or spreading awareness, 
             every action counts in creating positive change.
           </p>

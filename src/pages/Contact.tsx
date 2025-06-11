@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Mail, Phone, MapPin, Send, Clock, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { useSiteStats } from '../hooks/useSiteStats'
+import { useTheme } from '../contexts/ThemeContext'
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ export function Contact() {
   const [error, setError] = useState('')
   const { getSetting } = useSiteSettings()
   const { responseTimes, loading: responseTimesLoading } = useSiteStats()
+  const { theme } = useTheme()
 
   const contactEmail = getSetting('contact_email', 'info@hopefoundation.org')
   const contactPhone = getSetting('contact_phone', '+1 (555) 123-4567')
@@ -95,8 +97,8 @@ export function Contact() {
       <section className="bg-gradient-to-r from-theme-primary to-theme-accent text-white transition-colors duration-300 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">Contact Us</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-blue-100 animate-fade-in-delay">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in text-theme-title">Contact Us</h1>
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto text-theme-subtitle animate-fade-in-delay">
               Get in touch with us to learn more about our programs, volunteer opportunities, or how you can make a difference.
             </p>
           </div>
@@ -112,17 +114,17 @@ export function Contact() {
               <h2 className="text-3xl font-bold text-theme-text transition-colors duration-300 mb-6">Send us a Message</h2>
               
               {submitted ? (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-theme p-8 text-center transition-colors duration-300">
-                  <div className="text-green-600 dark:text-green-400 mb-4 transition-colors duration-300">
+                <div className="bg-theme-success/10 border border-theme-success/20 rounded-theme p-8 text-center transition-colors duration-300">
+                  <div className="text-theme-success mb-4 transition-colors duration-300">
                     <CheckCircle className="h-16 w-16 mx-auto" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-green-800 dark:text-green-300 mb-4 transition-colors duration-300">Message Sent Successfully!</h3>
-                  <p className="text-green-700 dark:text-green-400 mb-6 transition-colors duration-300">
+                  <h3 className="text-2xl font-semibold text-theme-text mb-4 transition-colors duration-300">Message Sent Successfully!</h3>
+                  <p className="text-theme-text-secondary mb-6 transition-colors duration-300">
                     Thank you for reaching out to us. We've received your message and will get back to you within 24 hours.
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}
-                    className="px-6 py-3 bg-green-600 text-white rounded-theme hover:bg-green-700 transition-colors duration-300 transform hover:scale-105"
+                    className="px-6 py-3 bg-theme-success text-white rounded-theme hover:bg-opacity-90 transition-colors duration-300 transform hover:scale-105"
                   >
                     Send Another Message
                   </button>
@@ -130,7 +132,7 @@ export function Contact() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {error && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-theme text-sm transition-colors duration-300">
+                    <div className="bg-theme-error/10 border border-theme-error/20 text-theme-error px-4 py-3 rounded-theme text-sm transition-colors duration-300">
                       {error}
                     </div>
                   )}

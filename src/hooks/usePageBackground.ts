@@ -24,6 +24,8 @@ export function usePageBackground() {
       // If it's a nested route like /programs/education, use the parent
       if (!pageName) pageName = 'home'
       
+      console.log('Fetching background for page:', pageName)
+      
       const { data, error } = await supabase
         .from('site_settings')
         .select('value')
@@ -34,9 +36,11 @@ export function usePageBackground() {
         console.error('Error fetching page background:', error)
         setBackground(null)
       } else if (data) {
+        console.log('Found background:', data.value)
         setBackground(data.value)
       } else {
         // Fallback to default background
+        console.log('No background found, using default')
         setBackground(null)
       }
     } catch (error) {
