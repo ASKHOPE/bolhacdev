@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle, ExternalLink, X, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Heart, MapPin, Calendar, Target, Users, DollarSign, CheckCircle, ExternalLink, X, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Project {
@@ -14,6 +14,8 @@ interface Project {
   end_date: string
   status: 'active' | 'completed' | 'upcoming'
   image_url: string
+  image_gallery: string[]
+  show_gallery: boolean
   beneficiaries: number
   program_category: string
 }
@@ -31,6 +33,7 @@ export function ProgramDetail() {
   const [program, setProgram] = useState<Program | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     if (programId) {
@@ -62,7 +65,15 @@ export function ProgramDetail() {
       if (projectsResult.error) throw projectsResult.error
 
       setProgram(programResult.data)
-      setProjects(projectsResult.data || [])
+      
+      // Add default values for new fields if they don't exist
+      const projectsWithDefaults = (projectsResult.data || []).map(project => ({
+        ...project,
+        image_gallery: project.image_gallery || [],
+        show_gallery: project.show_gallery !== undefined ? project.show_gallery : true
+      }))
+      
+      setProjects(projectsWithDefaults)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -87,33 +98,34 @@ export function ProgramDetail() {
     }
   }
 
-  // Sample additional images for project details
-  const getProjectImages = (projectId: string) => {
-    const imageCollections = [
-      [
-        'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/5427674/pexels-photo-5427674.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/8923080/pexels-photo-8923080.jpeg?auto=compress&cs=tinysrgb&w=800'
-      ],
-      [
-        'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/4386467/pexels-photo-4386467.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/6303776/pexels-photo-6303776.jpeg?auto=compress&cs=tinysrgb&w=800'
-      ],
-      [
-        'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/6962026/pexels-photo-6962026.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/6962028/pexels-photo-6962028.jpeg?auto=compress&cs=tinysrgb&w=800'
-      ]
-    ]
-    
-    // Use project ID hash to consistently select image collection
-    const hash = projectId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0)
-      return a & a
-    }, 0)
-    
-    return imageCollections[Math.abs(hash) % imageCollections.length]
+  const getAllProjectImages = (project: Project) => {
+    const images = []
+    if (project.image_url) {
+      images.push(project.image_url)
+    }
+    if (project.image_gallery && project.show_gallery) {
+      images.push(...project.image_gallery)
+    }
+    return images
+  }
+
+  const nextImage = () => {
+    if (selectedProject) {
+      const images = getAllProjectImages(selectedProject)
+      setCurrentImageIndex((prev) => (prev + 1) % images.length)
+    }
+  }
+
+  const prevImage = () => {
+    if (selectedProject) {
+      const images = getAllProjectImages(selectedProject)
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+    }
+  }
+
+  const openProjectModal = (project: Project) => {
+    setSelectedProject(project)
+    setCurrentImageIndex(0)
   }
 
   if (loading) {
@@ -208,11 +220,19 @@ export function ProgramDetail() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {projects.map((project) => (
                 <div key={project.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                  <img
-                    src={project.image_url}
-                    alt={project.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div className="relative">
+                    <img
+                      src={project.image_url}
+                      alt={project.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    {project.image_gallery && project.show_gallery && project.image_gallery.length > 0 && (
+                      <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                        <ImageIcon className="h-4 w-4 mr-1" />
+                        {project.image_gallery.length + 1} photos
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-3">
@@ -277,7 +297,7 @@ export function ProgramDetail() {
                         Donate Now
                       </Link>
                       <button 
-                        onClick={() => setSelectedProject(project)}
+                        onClick={() => openProjectModal(project)}
                         className="px-4 py-2 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -292,22 +312,65 @@ export function ProgramDetail() {
         </div>
       </section>
 
-      {/* Enhanced Project Detail Modal */}
+      {/* Enhanced Project Detail Modal with Image Gallery */}
       {selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Image Gallery Section */}
             <div className="relative">
-              <img
-                src={selectedProject.image_url}
-                alt={selectedProject.title}
-                className="w-full h-64 object-cover rounded-t-xl"
-              />
-              <button
-                onClick={() => setSelectedProject(null)}
-                className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              {(() => {
+                const images = getAllProjectImages(selectedProject)
+                return images.length > 0 ? (
+                  <div className="relative">
+                    <img
+                      src={images[currentImageIndex]}
+                      alt={`${selectedProject.title} - Image ${currentImageIndex + 1}`}
+                      className="w-full h-64 object-cover"
+                    />
+                    
+                    {/* Image Navigation */}
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        
+                        {/* Image Counter */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                          {currentImageIndex + 1} / {images.length}
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Close Button */}
+                    <button
+                      onClick={() => setSelectedProject(null)}
+                      className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative h-64 bg-gray-200 flex items-center justify-center">
+                    <ImageIcon className="h-16 w-16 text-gray-400" />
+                    <button
+                      onClick={() => setSelectedProject(null)}
+                      className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                )
+              })()}
             </div>
             
             <div className="p-8">
@@ -400,27 +463,38 @@ export function ProgramDetail() {
                 </div>
               </div>
 
-              {/* Project Gallery */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <ImageIcon className="h-5 w-5 mr-2" />
-                  Project Gallery
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {getProjectImages(selectedProject.id).map((imageUrl, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={imageUrl}
-                        alt={`${selectedProject.title} - Image ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-                        <ExternalLink className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
+              {/* Image Thumbnails */}
+              {(() => {
+                const images = getAllProjectImages(selectedProject)
+                return selectedProject.show_gallery && images.length > 1 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <ImageIcon className="h-5 w-5 mr-2" />
+                      Project Gallery ({images.length} images)
+                    </h3>
+                    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                      {images.map((imageUrl, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`relative group ${
+                            currentImageIndex === index ? 'ring-2 ring-blue-500' : ''
+                          }`}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`${selectedProject.title} - Thumbnail ${index + 1}`}
+                            className="w-full h-16 object-cover rounded border hover:opacity-80 transition-opacity"
+                          />
+                          {currentImageIndex === index && (
+                            <div className="absolute inset-0 bg-blue-500 bg-opacity-20 rounded"></div>
+                          )}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )
+              })()}
 
               {/* Key Achievements */}
               <div className="mb-8">

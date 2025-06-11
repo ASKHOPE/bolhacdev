@@ -14,7 +14,9 @@ import {
   X,
   Save,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -29,6 +31,8 @@ interface Project {
   end_date: string
   status: 'active' | 'completed' | 'upcoming'
   image_url: string | null
+  image_gallery: string[]
+  show_gallery: boolean
   beneficiaries: number
   program_category: string
   published: boolean
@@ -52,6 +56,8 @@ interface NewProject {
   end_date: string
   status: 'active' | 'completed' | 'upcoming'
   image_url: string
+  image_gallery: string[]
+  show_gallery: boolean
   beneficiaries: number
   program_category: string
   published: boolean
@@ -63,7 +69,7 @@ export function AdminProjects() {
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'active' | 'upcoming' | 'completed' | 'featured'>('all')
   const [programFilter, setProgramFilter] = useState<string>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
@@ -77,6 +83,8 @@ export function AdminProjects() {
     end_date: '',
     status: 'upcoming',
     image_url: '',
+    image_gallery: [],
+    show_gallery: true,
     beneficiaries: 0,
     program_category: '',
     published: false,
@@ -104,7 +112,14 @@ export function AdminProjects() {
       if (projectsResult.error) throw projectsResult.error
       if (programsResult.error) throw programsResult.error
 
-      setProjects(projectsResult.data || [])
+      // Add default values for new fields if they don't exist
+      const projectsWithDefaults = (projectsResult.data || []).map(project => ({
+        ...project,
+        image_gallery: project.image_gallery || [],
+        show_gallery: project.show_gallery !== undefined ? project.show_gallery : true
+      }))
+
+      setProjects(projectsWithDefaults)
       setPrograms(programsResult.data || [])
 
       // Set default category if programs exist
@@ -134,6 +149,8 @@ export function AdminProjects() {
           end_date: newProject.end_date,
           status: newProject.status,
           image_url: newProject.image_url || null,
+          image_gallery: newProject.image_gallery,
+          show_gallery: newProject.show_gallery,
           beneficiaries: newProject.beneficiaries,
           program_category: newProject.program_category,
           published: newProject.published,
@@ -145,7 +162,7 @@ export function AdminProjects() {
 
       if (error) throw error
 
-      setProjects([data, ...projects])
+      setProjects([{ ...data, image_gallery: data.image_gallery || [], show_gallery: data.show_gallery !== undefined ? data.show_gallery : true }, ...projects])
       setNewProject({
         title: '',
         description: '',
@@ -155,6 +172,8 @@ export function AdminProjects() {
         end_date: '',
         status: 'upcoming',
         image_url: '',
+        image_gallery: [],
+        show_gallery: true,
         beneficiaries: 0,
         program_category: programs.length > 0 ? programs[0].category : '',
         published: false,
@@ -236,12 +255,55 @@ export function AdminProjects() {
     return program ? program.title : category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   }
 
+  const handleStatusFilterClick = (filter: 'all' | 'published' | 'draft' | 'active' | 'upcoming' | 'completed' | 'featured') => {
+    setStatusFilter(filter)
+  }
+
+  const addImageToGallery = (projectData: NewProject | Project, setProjectData: Function) => {
+    const imageUrl = prompt('Enter image URL:')
+    if (imageUrl && imageUrl.trim()) {
+      setProjectData({
+        ...projectData,
+        image_gallery: [...(projectData.image_gallery || []), imageUrl.trim()]
+      })
+    }
+  }
+
+  const removeImageFromGallery = (projectData: NewProject | Project, setProjectData: Function, index: number) => {
+    setProjectData({
+      ...projectData,
+      image_gallery: projectData.image_gallery.filter((_, i) => i !== index)
+    })
+  }
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.location.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'published' && project.published) ||
-                         (statusFilter === 'draft' && !project.published)
+    
+    let matchesStatus = true
+    switch (statusFilter) {
+      case 'published':
+        matchesStatus = project.published
+        break
+      case 'draft':
+        matchesStatus = !project.published
+        break
+      case 'active':
+        matchesStatus = project.status === 'active'
+        break
+      case 'upcoming':
+        matchesStatus = project.status === 'upcoming'
+        break
+      case 'completed':
+        matchesStatus = project.status === 'completed'
+        break
+      case 'featured':
+        matchesStatus = project.featured
+        break
+      default:
+        matchesStatus = true
+    }
+    
     const matchesProgram = programFilter === 'all' || project.program_category === programFilter
     return matchesSearch && matchesStatus && matchesProgram
   })
@@ -261,7 +323,7 @@ export function AdminProjects() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Project Management</h1>
-            <p className="text-gray-600 mt-2">Create and manage individual projects</p>
+            <p className="text-gray-600 mt-2">Create and manage individual projects with image galleries</p>
           </div>
           <button 
             onClick={() => setShowAddForm(true)}
@@ -276,14 +338,14 @@ export function AdminProjects() {
       {/* Add Project Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Create New Project</h2>
               <button onClick={() => setShowAddForm(false)}>
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={addProject} className="space-y-4">
+            <form onSubmit={addProject} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
@@ -392,7 +454,7 @@ export function AdminProjects() {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Main Image URL</label>
                   <input
                     type="url"
                     value={newProject.image_url}
@@ -402,6 +464,63 @@ export function AdminProjects() {
                   />
                 </div>
               </div>
+
+              {/* Image Gallery Section */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Image Gallery</h3>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="show_gallery"
+                        checked={newProject.show_gallery}
+                        onChange={(e) => setNewProject({...newProject, show_gallery: e.target.checked})}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="show_gallery" className="ml-2 block text-sm text-gray-900">
+                        Show gallery in project details
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addImageToGallery(newProject, setNewProject)}
+                      className="flex items-center px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Image
+                    </button>
+                  </div>
+                </div>
+                
+                {newProject.image_gallery.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {newProject.image_gallery.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Gallery image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFromGallery(newProject, setNewProject, index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500">No images added to gallery yet</p>
+                    <p className="text-sm text-gray-400">Click "Add Image" to start building your gallery</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <input
@@ -452,7 +571,7 @@ export function AdminProjects() {
       {/* Edit Project Modal */}
       {editingProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Edit Project</h2>
               <button onClick={() => setEditingProject(null)}>
@@ -466,16 +585,19 @@ export function AdminProjects() {
                 description: editingProject.description,
                 location: editingProject.location,
                 target_amount: editingProject.target_amount,
+                raised_amount: editingProject.raised_amount,
                 start_date: editingProject.start_date,
                 end_date: editingProject.end_date,
                 status: editingProject.status,
                 image_url: editingProject.image_url,
+                image_gallery: editingProject.image_gallery,
+                show_gallery: editingProject.show_gallery,
                 beneficiaries: editingProject.beneficiaries,
                 program_category: editingProject.program_category,
                 published: editingProject.published,
                 featured: editingProject.featured
               })
-            }} className="space-y-4">
+            }} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
@@ -590,7 +712,7 @@ export function AdminProjects() {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Main Image URL</label>
                   <input
                     type="url"
                     value={editingProject.image_url || ''}
@@ -599,6 +721,63 @@ export function AdminProjects() {
                   />
                 </div>
               </div>
+
+              {/* Image Gallery Section */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Image Gallery</h3>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="edit_show_gallery"
+                        checked={editingProject.show_gallery}
+                        onChange={(e) => setEditingProject({...editingProject, show_gallery: e.target.checked})}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="edit_show_gallery" className="ml-2 block text-sm text-gray-900">
+                        Show gallery in project details
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addImageToGallery(editingProject, setEditingProject)}
+                      className="flex items-center px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Image
+                    </button>
+                  </div>
+                </div>
+                
+                {editingProject.image_gallery && editingProject.image_gallery.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {editingProject.image_gallery.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Gallery image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFromGallery(editingProject, setEditingProject, index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500">No images in gallery</p>
+                    <p className="text-sm text-gray-400">Click "Add Image" to add images to the gallery</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <input
@@ -646,9 +825,14 @@ export function AdminProjects() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Stats - Now Clickable */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
+        <button
+          onClick={() => handleStatusFilterClick('all')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'all' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100">
               <Target className="h-6 w-6 text-blue-600" />
@@ -658,8 +842,13 @@ export function AdminProjects() {
               <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('active')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'active' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -671,8 +860,13 @@ export function AdminProjects() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('upcoming')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'upcoming' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-yellow-100">
               <Calendar className="h-6 w-6 text-yellow-600" />
@@ -684,8 +878,13 @@ export function AdminProjects() {
               </p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('published')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'published' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100">
               <Eye className="h-6 w-6 text-purple-600" />
@@ -697,7 +896,25 @@ export function AdminProjects() {
               </p>
             </div>
           </div>
-        </div>
+        </button>
+        <button
+          onClick={() => handleStatusFilterClick('featured')}
+          className={`bg-white rounded-lg shadow-md p-6 text-left hover:shadow-lg transition-shadow ${
+            statusFilter === 'featured' ? 'ring-2 ring-blue-500' : ''
+          }`}
+        >
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-indigo-100">
+              <Target className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Featured</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {projects.filter(p => p.featured).length}
+              </p>
+            </div>
+          </div>
+        </button>
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-red-100">
@@ -736,6 +953,10 @@ export function AdminProjects() {
               <option value="all">All Status</option>
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
+              <option value="active">Active</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="completed">Completed</option>
+              <option value="featured">Featured</option>
             </select>
           </div>
           <div>
@@ -781,11 +1002,19 @@ export function AdminProjects() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
             <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <img
-                src={project.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400'}
-                alt={project.title}
-                className="w-full h-48 object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={project.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                  alt={project.title}
+                  className="w-full h-48 object-cover"
+                />
+                {project.image_gallery && project.image_gallery.length > 0 && (
+                  <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs flex items-center">
+                    <ImageIcon className="h-3 w-3 mr-1" />
+                    {project.image_gallery.length + 1}
+                  </div>
+                )}
+              </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
