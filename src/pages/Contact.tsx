@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Mail, Phone, MapPin, Send, Clock } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, Clock, CheckCircle } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ export function Contact() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -21,13 +23,35 @@ export function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError('')
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setSubmitted(true)
-    setIsSubmitting(false)
-    setFormData({ name: '', email: '', subject: '', message: '' })
+    try {
+      // Validate form data
+      if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+        throw new Error('Please fill in all required fields')
+      }
+
+      // Submit to Supabase
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert([{
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject,
+          message: formData.message.trim(),
+          status: 'new'
+        }])
+
+      if (error) throw error
+
+      setSubmitted(true)
+      setFormData({ name: '', email: '', subject: '', message: '' })
+    } catch (err) {
+      console.error('Error submitting contact form:', err)
+      setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const contactInfo = [
@@ -80,17 +104,29 @@ export function Contact() {
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Send us a Message</h2>
               
               {submitted ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
                   <div className="text-green-600 mb-4">
-                    <Send className="h-12 w-12 mx-auto" />
+                    <CheckCircle className="h-16 w-16 mx-auto" />
                   </div>
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">Message Sent!</h3>
-                  <p className="text-green-700">
-                    Thank you for reaching out. We'll get back to you within 24 hours.
+                  <h3 className="text-2xl font-semibold text-green-800 mb-4">Message Sent Successfully!</h3>
+                  <p className="text-green-700 mb-6">
+                    Thank you for reaching out to us. We've received your message and will get back to you within 24 hours.
                   </p>
+                  <button
+                    onClick={() => setSubmitted(false)}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Send Another Message
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -103,7 +139,7 @@ export function Contact() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Your full name"
                       />
                     </div>
@@ -118,7 +154,7 @@ export function Contact() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="your.email@example.com"
                       />
                     </div>
@@ -134,7 +170,7 @@ export function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     >
                       <option value="">Select a subject</option>
                       <option value="volunteer">Volunteer Opportunities</option>
@@ -142,6 +178,8 @@ export function Contact() {
                       <option value="partnership">Partnership</option>
                       <option value="programs">Program Information</option>
                       <option value="media">Media Inquiry</option>
+                      <option value="support">Technical Support</option>
+                      <option value="feedback">Feedback & Suggestions</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
@@ -157,20 +195,23 @@ export function Contact() {
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-vertical"
                       placeholder="Tell us how we can help you..."
                     />
+                    <div className="text-right text-sm text-gray-500 mt-1">
+                      {formData.message.length}/1000 characters
+                    </div>
                   </div>
                   
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-6 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Sending...
+                        Sending Message...
                       </div>
                     ) : (
                       <div className="flex items-center justify-center">
@@ -193,7 +234,7 @@ export function Contact() {
 
               <div className="space-y-6">
                 {contactInfo.map((info, index) => (
-                  <div key={index} className="flex items-start space-x-4">
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-shrink-0">
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                         <info.icon className="h-6 w-6 text-blue-600" />
@@ -214,12 +255,36 @@ export function Contact() {
                 ))}
               </div>
 
+              {/* Response Time Info */}
+              <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 mb-3">Response Times</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">General Inquiries:</span>
+                    <span className="font-medium text-blue-900">Within 24 hours</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Volunteer Applications:</span>
+                    <span className="font-medium text-blue-900">Within 48 hours</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Partnership Inquiries:</span>
+                    <span className="font-medium text-blue-900">Within 3-5 business days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Media Requests:</span>
+                    <span className="font-medium text-blue-900">Within 24 hours</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Map Placeholder */}
               <div className="mt-8">
                 <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-500">Interactive map would go here</p>
+                    <p className="text-sm text-gray-400 mt-1">123 Hope Street, City, State 12345</p>
                   </div>
                 </div>
               </div>
@@ -258,8 +323,16 @@ export function Contact() {
                 question: 'How can my company partner with HopeFoundation?',
                 answer: 'We offer various partnership opportunities including corporate sponsorships, employee volunteer programs, and cause marketing initiatives. Contact our partnership team to discuss how we can work together.',
               },
+              {
+                question: 'How quickly will I receive a response to my inquiry?',
+                answer: 'We strive to respond to all inquiries within 24 hours during business days. Complex partnership or program inquiries may take 3-5 business days for a comprehensive response.',
+              },
+              {
+                question: 'Can I schedule a visit to your facilities?',
+                answer: 'Yes! We welcome visitors and offer guided tours of our facilities. Please contact us at least 48 hours in advance to schedule your visit and ensure someone is available to show you around.',
+              },
             ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6">
+              <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   {faq.question}
                 </h3>
