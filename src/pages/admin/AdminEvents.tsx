@@ -51,6 +51,7 @@ export function AdminEvents() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [newEvent, setNewEvent] = useState<NewEvent>({
     title: '',
     description: '',
@@ -85,12 +86,24 @@ export function AdminEvents() {
 
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitting(true)
+    
     try {
+      // Convert date to ISO string if it's not already
+      const eventDate = newEvent.date.includes('T') ? newEvent.date : `${newEvent.date}T00:00:00`
+      
       const { data, error } = await supabase
         .from('events')
         .insert([{
-          ...newEvent,
-          max_attendees: newEvent.max_attendees || null,
+          title: newEvent.title,
+          description: newEvent.description,
+          date: eventDate,
+          location: newEvent.location,
+          image_url: newEvent.image_url || null,
+          max_attendees: newEvent.max_attendees,
+          registration_fee: newEvent.registration_fee,
+          published: newEvent.published,
+          featured: newEvent.featured,
           current_attendees: 0
         }])
         .select()
@@ -114,11 +127,20 @@ export function AdminEvents() {
     } catch (error) {
       console.error('Error adding event:', error)
       alert('Error adding event: ' + (error as Error).message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const updateEvent = async (eventId: string, updates: Partial<Event>) => {
+    setSubmitting(true)
+    
     try {
+      // Convert date to ISO string if it's being updated
+      if (updates.date && !updates.date.includes('T')) {
+        updates.date = `${updates.date}T00:00:00`
+      }
+      
       const { error } = await supabase
         .from('events')
         .update(updates)
@@ -133,6 +155,8 @@ export function AdminEvents() {
     } catch (error) {
       console.error('Error updating event:', error)
       alert('Error updating event: ' + (error as Error).message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -207,27 +231,29 @@ export function AdminEvents() {
             <form onSubmit={addEvent} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                   <input
                     type="text"
                     required
                     value={newEvent.title}
                     onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Event title"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
                   <textarea
                     required
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                     rows={3}
+                    placeholder="Event description"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
                   <input
                     type="datetime-local"
                     required
@@ -237,13 +263,14 @@ export function AdminEvents() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
                   <input
                     type="text"
                     required
                     value={newEvent.location}
                     onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Event location"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -308,9 +335,10 @@ export function AdminEvents() {
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Create Event
+                  {submitting ? 'Creating...' : 'Create Event'}
                 </button>
                 <button
                   type="button"
@@ -351,7 +379,7 @@ export function AdminEvents() {
             }} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                   <input
                     type="text"
                     required
@@ -361,7 +389,7 @@ export function AdminEvents() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
                   <textarea
                     required
                     value={editingEvent.description}
@@ -371,7 +399,7 @@ export function AdminEvents() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
                   <input
                     type="datetime-local"
                     required
@@ -381,7 +409,7 @@ export function AdminEvents() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
                   <input
                     type="text"
                     required
@@ -450,9 +478,10 @@ export function AdminEvents() {
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Save Changes
+                  {submitting ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
                   type="button"
@@ -552,102 +581,115 @@ export function AdminEvents() {
       </div>
 
       {/* Events Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredEvents.map((event) => (
-          <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <img
-              src={event.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400'}
-              alt={event.title}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  event.published 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {event.published ? 'Published' : 'Draft'}
-                </span>
-                {event.featured && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Featured
+      {filteredEvents.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
+          <p className="text-gray-600">
+            {events.length === 0 
+              ? "No events have been created yet. Create your first event to get started."
+              : "No events match your current search and filter criteria."
+            }
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredEvents.map((event) => (
+            <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <img
+                src={event.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                alt={event.title}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    event.published 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {event.published ? 'Published' : 'Draft'}
                   </span>
-                )}
-              </div>
-              
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {event.title}
-              </h3>
-              
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {event.description}
-              </p>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {new Date(event.date).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {event.location}
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-2" />
-                    {event.current_attendees}/{event.max_attendees || '∞'}
-                  </div>
-                  {event.registration_fee > 0 && (
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      ${event.registration_fee}
-                    </div>
+                  {event.featured && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Featured
+                    </span>
                   )}
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => toggleEventStatus(event.id, event.published)}
-                  className={`flex items-center px-3 py-1 rounded text-xs font-medium transition-colors ${
-                    event.published
-                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
-                >
-                  {event.published ? (
-                    <>
-                      <EyeOff className="h-3 w-3 mr-1" />
-                      Unpublish
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-3 w-3 mr-1" />
-                      Publish
-                    </>
-                  )}
-                </button>
                 
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => setEditingEvent(event)}
-                    className="text-blue-600 hover:text-blue-900"
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {event.title}
+                </h3>
+                
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {event.description}
+                </p>
+                
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(event.date).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {event.location}
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      {event.current_attendees}/{event.max_attendees || '∞'}
+                    </div>
+                    {event.registration_fee > 0 && (
+                      <div className="flex items-center">
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        ${event.registration_fee}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => toggleEventStatus(event.id, event.published)}
+                    className={`flex items-center px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      event.published
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
                   >
-                    <Edit className="h-4 w-4" />
+                    {event.published ? (
+                      <>
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Unpublish
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-3 w-3 mr-1" />
+                        Publish
+                      </>
+                    )}
                   </button>
-                  <button 
-                    onClick={() => deleteEvent(event.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => setEditingEvent(event)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={() => deleteEvent(event.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
