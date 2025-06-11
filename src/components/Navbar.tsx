@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Heart, User, Settings } from 'lucide-react'
+import { Menu, X, Heart, User, Settings, Sun, Moon, Monitor } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
   const { user, profile, signOut, isAdmin } = useAuth()
+  const { theme, updateTheme } = useTheme()
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -19,14 +21,34 @@ export function Navbar() {
 
   const isActive = (path: string) => location.pathname === path
 
+  const getThemeIcon = () => {
+    switch (theme.mode) {
+      case 'light':
+        return Sun
+      case 'dark':
+        return Moon
+      default:
+        return Monitor
+    }
+  }
+
+  const cycleTheme = () => {
+    const modes = ['light', 'dark', 'auto'] as const
+    const currentIndex = modes.indexOf(theme.mode)
+    const nextIndex = (currentIndex + 1) % modes.length
+    updateTheme({ mode: modes[nextIndex] })
+  }
+
+  const ThemeIcon = getThemeIcon()
+
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-theme-background shadow-lg sticky top-0 z-50 border-b border-theme-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">HopeFoundation</span>
+              <Heart className="h-8 w-8 text-theme-primary" />
+              <span className="text-xl font-bold text-theme-text">HopeFoundation</span>
             </Link>
           </div>
 
@@ -38,21 +60,30 @@ export function Navbar() {
                 to={item.href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'text-theme-primary bg-theme-surface'
+                    : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
                 }`}
               >
                 {item.name}
               </Link>
             ))}
             
+            {/* Theme Toggle */}
+            <button
+              onClick={cycleTheme}
+              className="p-2 rounded-md text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-colors"
+              title={`Current: ${theme.mode} mode. Click to cycle themes.`}
+            >
+              <ThemeIcon className="h-5 w-5" />
+            </button>
+            
             {/* Admin Panel Link - Always visible for now */}
             <Link
               to="/admin"
               className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/admin')
-                  ? 'text-blue-600 bg-blue-50'
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                  ? 'text-theme-primary bg-theme-surface'
+                  : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
               }`}
             >
               <Settings className="h-4 w-4" />
@@ -63,7 +94,7 @@ export function Navbar() {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/dashboard"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
                 >
                   <User className="h-4 w-4" />
                   <span>Dashboard</span>
@@ -79,13 +110,13 @@ export function Navbar() {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600"
+                  className="px-4 py-2 rounded-md text-sm font-medium text-theme-text hover:text-theme-primary"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-theme-primary hover:opacity-90 transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -94,10 +125,19 @@ export function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={cycleTheme}
+              className="p-2 rounded-md text-theme-text hover:text-theme-primary transition-colors"
+              title={`Current: ${theme.mode} mode`}
+            >
+              <ThemeIcon className="h-5 w-5" />
+            </button>
+            
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600"
+              className="text-theme-text hover:text-theme-primary focus:outline-none focus:text-theme-primary"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -107,15 +147,15 @@ export function Navbar() {
         {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-theme-background border-t border-theme-border">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive(item.href)
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                      ? 'text-theme-primary bg-theme-surface'
+                      : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -126,17 +166,17 @@ export function Navbar() {
               {/* Admin Panel Link - Mobile */}
               <Link
                 to="/admin"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
                 onClick={() => setIsOpen(false)}
               >
                 Admin Panel
               </Link>
               
               {user ? (
-                <div className="space-y-1 pt-2 border-t">
+                <div className="space-y-1 pt-2 border-t border-theme-border">
                   <Link
                     to="/dashboard"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
                     onClick={() => setIsOpen(false)}
                   >
                     Dashboard
@@ -152,17 +192,17 @@ export function Navbar() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-1 pt-2 border-t">
+                <div className="space-y-1 pt-2 border-t border-theme-border">
                   <Link
                     to="/login"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface"
                     onClick={() => setIsOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-white bg-theme-primary hover:opacity-90"
                     onClick={() => setIsOpen(false)}
                   >
                     Sign Up
