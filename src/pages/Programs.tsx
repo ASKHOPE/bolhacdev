@@ -1,100 +1,73 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, Heart, Droplets, Home, Users, Lightbulb, ArrowRight } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+
+interface Program {
+  id: string
+  title: string
+  description: string
+  category: string
+  image_url: string | null
+  published: boolean
+  featured: boolean
+  created_at: string
+  updated_at: string
+}
 
 export function Programs() {
-  const programs = [
-    {
-      id: 'education',
-      icon: BookOpen,
-      title: 'Education Initiative',
-      description: 'Providing quality education and learning resources to underserved communities worldwide.',
-      image: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '15,000+', locations: '12 countries', duration: '5 years' },
-      details: [
-        'Building and renovating schools in remote areas',
-        'Training local teachers and providing educational materials',
-        'Scholarship programs for underprivileged students',
-        'Adult literacy programs for community development',
-      ],
-      color: 'blue',
-    },
-    {
-      id: 'healthcare',
-      icon: Heart,
-      title: 'Healthcare Access',
-      description: 'Ensuring basic healthcare services reach remote and marginalized communities.',
-      image: 'https://images.pexels.com/photos/6303773/pexels-photo-6303773.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '25,000+', locations: '8 countries', duration: '7 years' },
-      details: [
-        'Mobile health clinics for remote communities',
-        'Training community health workers',
-        'Maternal and child health programs',
-        'Disease prevention and health education campaigns',
-      ],
-      color: 'red',
-    },
-    {
-      id: 'clean-water',
-      icon: Droplets,
-      title: 'Clean Water Project',
-      description: 'Building sustainable water systems and sanitation facilities for communities in need.',
-      image: 'https://images.pexels.com/photos/6962024/pexels-photo-6962024.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '8,000+', locations: '6 countries', duration: '4 years' },
-      details: [
-        'Drilling wells and installing water pumps',
-        'Building water treatment facilities',
-        'Constructing sanitation systems',
-        'Training communities in water system maintenance',
-      ],
-      color: 'cyan',
-    },
-    {
-      id: 'housing',
-      icon: Home,
-      title: 'Housing Development',
-      description: 'Providing safe, affordable housing solutions for families in crisis.',
-      image: 'https://images.pexels.com/photos/8293778/pexels-photo-8293778.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '2,500+', locations: '5 countries', duration: '3 years' },
-      details: [
-        'Building disaster-resistant homes',
-        'Renovating existing housing structures',
-        'Community-led construction training',
-        'Sustainable building material sourcing',
-      ],
-      color: 'green',
-    },
-    {
-      id: 'community-empowerment',
-      icon: Users,
-      title: 'Community Empowerment',
-      description: 'Supporting local leadership and economic development initiatives.',
-      image: 'https://images.pexels.com/photos/7551659/pexels-photo-7551659.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '10,000+', locations: '15 countries', duration: '6 years' },
-      details: [
-        'Leadership training for community members',
-        'Microfinance and small business support',
-        'Cooperative development programs',
-        'Women\'s empowerment initiatives',
-      ],
-      color: 'purple',
-    },
-    {
-      id: 'innovation',
-      icon: Lightbulb,
-      title: 'Innovation Lab',
-      description: 'Developing technology solutions for humanitarian challenges.',
-      image: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800',
-      stats: { beneficiaries: '5,000+', locations: '10 countries', duration: '2 years' },
-      details: [
-        'Solar energy solutions for remote areas',
-        'Mobile technology for education and health',
-        'Agricultural technology innovations',
-        'Digital literacy programs',
-      ],
-      color: 'yellow',
-    },
-  ]
+  const [programs, setPrograms] = useState<Program[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const categoryIcons = {
+    education: BookOpen,
+    healthcare: Heart,
+    'clean-water': Droplets,
+    housing: Home,
+    'community-empowerment': Users,
+    innovation: Lightbulb,
+  }
+
+  const categoryColors = {
+    education: 'blue',
+    healthcare: 'red',
+    'clean-water': 'cyan',
+    housing: 'green',
+    'community-empowerment': 'purple',
+    innovation: 'yellow',
+  }
+
+  useEffect(() => {
+    fetchPrograms()
+  }, [])
+
+  const fetchPrograms = async () => {
+    try {
+      setError(null)
+      console.log('Fetching programs from Supabase...')
+      
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*')
+        .eq('published', true)
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+
+      console.log('Programs fetched:', data)
+      setPrograms(data || [])
+    } catch (error) {
+      console.error('Error fetching programs:', error)
+      setError('Failed to load programs. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getColorClasses = (color: string) => {
     const colors = {
@@ -106,6 +79,42 @@ export function Programs() {
       yellow: 'bg-yellow-100 text-yellow-600',
     }
     return colors[color as keyof typeof colors] || 'bg-blue-100 text-blue-600'
+  }
+
+  const getIcon = (category: string) => {
+    return categoryIcons[category as keyof typeof categoryIcons] || BookOpen
+  }
+
+  const getColor = (category: string) => {
+    return categoryColors[category as keyof typeof categoryColors] || 'blue'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <BookOpen className="h-16 w-16 mx-auto mb-4" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Programs</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchPrograms}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -125,84 +134,86 @@ export function Programs() {
       {/* Programs Grid */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {programs.map((program, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
-              >
-                <div className="relative">
-                  <img
-                    src={program.image}
-                    alt={program.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${getColorClasses(program.color)}`}>
-                      <program.icon className="h-6 w-6" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    {program.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {program.description}
-                  </p>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-2 mb-6">
-                    <div className="text-center p-2 bg-gray-50 rounded">
-                      <div className="text-sm font-bold text-gray-900">
-                        {program.stats.beneficiaries}
-                      </div>
-                      <div className="text-xs text-gray-600">Beneficiaries</div>
-                    </div>
-                    <div className="text-center p-2 bg-gray-50 rounded">
-                      <div className="text-sm font-bold text-gray-900">
-                        {program.stats.locations}
-                      </div>
-                      <div className="text-xs text-gray-600">Locations</div>
-                    </div>
-                    <div className="text-center p-2 bg-gray-50 rounded">
-                      <div className="text-sm font-bold text-gray-900">
-                        {program.stats.duration}
-                      </div>
-                      <div className="text-xs text-gray-600">Active</div>
-                    </div>
-                  </div>
-
-                  {/* Key Features */}
-                  <ul className="space-y-1 mb-6">
-                    {program.details.slice(0, 2).map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-start text-sm">
-                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-2 flex-shrink-0"></div>
-                        <span className="text-gray-600">{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="flex space-x-3">
-                    <Link
-                      to={`/programs/${program.id}`}
-                      className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      View Projects
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Link>
-                    <Link
-                      to={`/donate?program=${program.id}`}
-                      className="flex items-center justify-center px-4 py-2 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
-                    >
-                      <Heart className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
+          {programs.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Programs Available</h3>
+              <p className="text-gray-600">
+                We're currently developing new programs. Check back soon for exciting initiatives!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  Our Impact Programs
+                </h2>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                  We focus on sustainable solutions that create lasting change in communities worldwide.
+                  Explore our {programs.length} active program{programs.length !== 1 ? 's' : ''}.
+                </p>
               </div>
-            ))}
-          </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {programs.map((program) => {
+                  const Icon = getIcon(program.category)
+                  const color = getColor(program.category)
+                  
+                  return (
+                    <div
+                      key={program.id}
+                      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
+                    >
+                      <div className="relative">
+                        <img
+                          src={program.image_url || 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                          alt={program.title}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${getColorClasses(color)}`}>
+                            <Icon className="h-6 w-6" />
+                          </div>
+                        </div>
+                        {program.featured && (
+                          <div className="absolute top-4 right-4">
+                            <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                              Featured
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          {program.title}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                          {program.description}
+                        </p>
+
+                        <div className="flex space-x-3">
+                          <Link
+                            to={`/programs/${program.category}`}
+                            className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            View Projects
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Link>
+                          <Link
+                            to={`/donate?program=${program.category}`}
+                            className="flex items-center justify-center px-4 py-2 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                          >
+                            <Heart className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
