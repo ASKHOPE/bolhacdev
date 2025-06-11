@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
-import { User, Heart, Calendar, Settings, Award, Users, Edit, Save, X, Plus, CheckCircle } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { User, Heart, Calendar, Award, Users, CheckCircle } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js' // Import createClient
+
+// Supabase client initialization (for data fetching only)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+let supabaseClient: any = null; // Keep it any to avoid type issues if createClient fails
+if (supabaseUrl && supabaseAnonKey) {
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn("Supabase URL or Anon Key is missing. Data fetching will be disabled.");
+}
+
 
 interface UserStats {
   donationsMade: number
@@ -29,14 +41,8 @@ interface UpcomingEvent {
 }
 
 export function Dashboard() {
-  const { profile, updateProfile, signOut } = useAuth()
-  const [editingProfile, setEditingProfile] = useState(false)
-  const [profileForm, setProfileForm] = useState({
-    full_name: profile?.full_name || '',
-    phone: profile?.phone || '',
-    bio: profile?.bio || '',
-  })
-  const [saving, setSaving] = useState(false)
+  const { user, isAdmin, signOut, getAccessTokenSilently } = useAuth(); // Updated useAuth
+  // Removed editingProfile, profileForm, saving states
   const [userStats, setUserStats] = useState<UserStats>({
     donationsMade: 0,
     totalDonated: 0,
@@ -49,35 +55,42 @@ export function Dashboard() {
   const [registering, setRegistering] = useState<string | null>(null)
 
   useEffect(() => {
-    if (profile) {
-      setProfileForm({
-        full_name: profile.full_name || '',
-        phone: profile.phone || '',
-        bio: profile.bio || '',
-      })
-      fetchUserData()
+    if (user?.email && supabaseClient) { // Check if supabaseClient is initialized
+      fetchUserData();
+    } else if (!supabaseClient) {
+      setLoading(false); // Don't attempt to load data if Supabase isn't configured
     }
-  }, [profile])
+  }, [user?.email]); // Re-fetch if user email changes
 
   const fetchUserData = async () => {
-    if (!profile) return
+    if (!user?.email || !supabaseClient) { // Ensure client and email exist
+        setLoading(false);
+        return;
+    }
+    setLoading(true); // Ensure loading is true at the start of fetch
 
     try {
-      // Fetch user donations
-      const { data: donations } = await supabase
+      const { data: donations, error: donationsError } = await supabaseClient
         .from('donations')
         .select('amount, created_at')
-        .eq('donor_email', profile.email)
-        .eq('payment_status', 'completed')
+        .eq('donor_email', user.email)
+        .eq('payment_status', 'completed');
 
-      // Fetch upcoming events
-      const { data: events } = await supabase
+      if (donationsError) {
+        console.error('Error fetching donations:', donationsError);
+      }
+
+      const { data: events, error: eventsError } = await supabaseClient
         .from('events')
         .select('id, title, date, location')
         .eq('published', true)
         .gte('date', new Date().toISOString())
         .order('date', { ascending: true })
-        .limit(5)
+        .limit(5);
+
+      if (eventsError) {
+        console.error('Error fetching events:', eventsError);
+      }
 
       const donationCount = donations?.length || 0
       const totalDonated = donations?.reduce((sum, d) => sum + d.amount, 0) || 0
@@ -115,21 +128,7 @@ export function Dashboard() {
     }
   }
 
-  const handleProfileSave = async () => {
-    setSaving(true)
-    try {
-      const { error } = await updateProfile(profileForm)
-      if (error) {
-        alert('Error updating profile: ' + error.message)
-      } else {
-        setEditingProfile(false)
-      }
-    } catch (error) {
-      alert('Error updating profile')
-    } finally {
-      setSaving(false)
-    }
-  }
+  // Removed handleProfileSave function
 
   const handleEventRegistration = async (eventId: string) => {
     setRegistering(eventId)
@@ -208,7 +207,7 @@ export function Dashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {profile?.full_name || 'User'}!
+            Welcome back, {user?.name || user?.nickname || user?.email || 'User'}!
           </h1>
           <p className="text-gray-600 mt-2">
             Here's your impact dashboard and recent activity.
@@ -369,40 +368,7 @@ export function Dashboard() {
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
-            {!editingProfile ? (
-              <button
-                onClick={() => setEditingProfile(true)}
-                className="flex items-center text-blue-600 hover:text-blue-700"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleProfileSave}
-                  disabled={saving}
-                  className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingProfile(false)
-                    setProfileForm({
-                      full_name: profile?.full_name || '',
-                      phone: profile?.phone || '',
-                      bio: profile?.bio || '',
-                    })
-                  }}
-                  className="flex items-center px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Cancel
-                </button>
-              </div>
-            )}
+            {/* Edit profile button removed */}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -410,73 +376,47 @@ export function Dashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name
               </label>
-              {editingProfile ? (
-                <input
-                  type="text"
-                  value={profileForm.full_name}
-                  onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              ) : (
-                <p className="text-gray-900">{profile?.full_name || 'Not provided'}</p>
-              )}
+              <p className="text-gray-900">{user?.name || user?.nickname || 'Not provided'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
-              <p className="text-gray-900">{profile?.email}</p>
+              <p className="text-gray-900">{user?.email || 'Not provided'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
-              {editingProfile ? (
-                <input
-                  type="tel"
-                  value={profileForm.phone}
-                  onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter phone number"
-                />
-              ) : (
-                <p className="text-gray-900">{profile?.phone || 'Not provided'}</p>
-              )}
+              {/* Auth0 user.phone_number, if populated (often requires custom claims or specific scopes) */}
+              <p className="text-gray-900">{user?.phone_number || 'Not provided'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Account Type
               </label>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                profile?.role === 'admin' 
+                isAdmin
                   ? 'bg-purple-100 text-purple-800' 
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {profile?.role === 'admin' ? 'Administrator' : 'User'}
+                {isAdmin ? 'Administrator' : 'User'}
               </span>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Bio
               </label>
-              {editingProfile ? (
-                <textarea
-                  value={profileForm.bio}
-                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Tell us about yourself"
-                />
-              ) : (
-                <p className="text-gray-900">{profile?.bio || 'No bio provided'}</p>
-              )}
+              {/* Bio is not a standard Auth0 attribute. Would require custom claims. */}
+              <p className="text-gray-900">{'No bio provided (Feature removed)'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Member Since
+                Last Updated / Member Since
               </label>
+              {/* Auth0 user.updated_at or user.created_at if available and desired */}
               <p className="text-gray-900">
-                {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
+                {user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Unknown'}
               </p>
             </div>
           </div>

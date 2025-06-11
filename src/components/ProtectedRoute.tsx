@@ -8,23 +8,27 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth()
+  const { isAuthenticated, isLoading, isAdmin, user } = useAuth(); // user might be needed for other checks or if not fully relying on isAuthenticated
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
-    )
+    );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />
+  if (!isAuthenticated) {
+    // Not authenticated, redirect to login
+    return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && profile?.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />
+  if (requireAdmin && !isAdmin) {
+    // Authenticated but not an admin, and admin is required
+    // Redirect to a general page like dashboard or a specific "access denied" page
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>
+  // Authenticated and has necessary permissions
+  return <>{children}</>;
 }

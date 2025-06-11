@@ -1,63 +1,56 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Eye, EyeOff, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react'
+import React, { useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { AlertCircle, CheckCircle } from 'lucide-react'; // Keep icons for potential messages
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  const { signIn, user } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const { signIn, user, isLoading, error: authError, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [message, setMessage] = React.useState(''); // For messages like email confirmation
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard')
+    // If already authenticated, redirect to dashboard
+    if (isAuthenticated && user) {
+      navigate('/dashboard');
     }
-  }, [user, navigate])
+  }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
-    // Check for confirmation success
+    // Check for query params like 'confirmed' or 'error' from redirects
     if (searchParams.get('confirmed') === 'true') {
-      setMessage('Email confirmed successfully! You can now log in.')
+      setMessage('Email confirmed successfully! You can now log in.');
     }
-  }, [searchParams])
+    // Auth0 might pass error messages in query params, e.g., ?error=access_denied&error_description=...
+    const auth0ErrorParam = searchParams.get('error');
+    const auth0ErrorDescription = searchParams.get('error_description');
+    if (auth0ErrorParam) {
+      setMessage(''); // Clear previous messages
+      // Consider setting a local error state here if you want to display these errors prominently
+      // For now, relying on the global `authError` from `useAuth()` if it captures these.
+      console.error("Auth0 redirect error:", auth0ErrorDescription || auth0ErrorParam);
+    }
+  }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setMessage('')
-    setLoading(true)
-
+  const handleLogin = async () => {
     try {
-      const { error } = await signIn(email, password)
-      
-      if (error) {
-        if (error.message.includes('confirmation')) {
-          setMessage(error.message)
-        } else {
-          setError(error.message)
-        }
-      }
+      await signIn(); // This will redirect to Auth0 Universal Login
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
-      setLoading(false)
+      // This catch block might not be reached if errors are handled by redirect params
+      // or by the global error state in AuthContext.
+      console.error("Error initiating signIn:", err);
+      // Optionally set a local error state: setErrorState("Failed to initiate login. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-8 text-center">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600">
             Or{' '}
             <Link
               to="/register"
@@ -67,120 +60,60 @@ export default function Login() {
             </Link>
           </p>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-400" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    {error}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {message && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 text-green-400" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">
-                    {message}
-                  </h3>
-                </div>
+        {/* Display Auth0 errors from context or other messages */}
+        {authError && (
+          <div className="rounded-md bg-red-50 p-4 my-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-400" />
               </div>
-            </div>
-          )}
-
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <button
-                    type="button"
-                    className="text-gray-400 hover:text-gray-500"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  {authError.message || 'An error occurred during login.'}
+                </h3>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
+        {message && (
+          <div className="rounded-md bg-green-50 p-4 my-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <CheckCircle className="h-5 w-5 text-green-400" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">
+                  {message}
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 space-y-6">
+          <button
+            onClick={handleLogin}
+            disabled={isLoading}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Redirecting to login...' : 'Sign In'}
+          </button>
+        </div>
+
+        <div className="text-sm mt-4">
+            <Link
                 to="/forgot-password"
                 className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
+                Forgot your password?
+            </Link>
+        </div>
+
       </div>
     </div>
-  )
+  );
 }
 
-export { Login }
+// Removed named export "Login" as it's default export now.

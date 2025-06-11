@@ -20,6 +20,7 @@ import { DonationSuccess } from './pages/DonationSuccess'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
+import ForgotPassword from './pages/ForgotPassword' // Import the new component
 
 // Admin Pages
 import { AdminLayout } from './pages/admin/AdminLayout'
@@ -81,6 +82,8 @@ function App() {
                             <Route path="/donation-success" element={<DonationSuccess />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Forgot Password Route */}
+                            <Route path="/callback" element={null} /> {/* Auth0 Callback route */}
                             <Route
                               path="/dashboard"
                               element={

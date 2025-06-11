@@ -10,7 +10,7 @@ export function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, profile, signOut, isAdmin } = useAuth()
+  const { user, signOut, isAdmin } = useAuth() // Removed profile
   const { theme, updateTheme } = useTheme()
   const { getSetting } = useSiteSettings()
 
@@ -125,7 +125,7 @@ export function Navbar() {
                   className="flex items-center space-x-2 px-3 py-2 rounded-theme text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                 >
                   <User className="h-4 w-4" />
-                  <span>{profile?.full_name || 'User'}</span>
+                  <span>{user?.name || user?.nickname || user?.email || 'User'}</span>
                   <ChevronDown className="h-4 w-4" />
                 </button>
                 
@@ -221,7 +221,7 @@ export function Navbar() {
               {user ? (
                 <div className="space-y-1 pt-2 border-t border-theme-border">
                   <div className="px-3 py-2 text-sm font-medium text-theme-text">
-                    Signed in as {profile?.full_name || profile?.email || 'User'}
+                    Signed in as {user?.name || user?.nickname || user?.email || 'User'}
                   </div>
                   <Link
                     to="/dashboard"

@@ -1,220 +1,90 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import React, { createContext, useContext } from 'react';
+import { useAuth0, User as Auth0User, AppState, Auth0ContextInterface } from '@auth0/auth0-react';
 
-interface Profile {
-  id: string
-  email: string
-  full_name: string | null
-  role: 'admin' | 'user'
-  avatar_url: string | null
-  phone: string | null
-  bio: string | null
-  created_at: string
-  updated_at: string
-}
+// Define a namespace for custom claims. Replace with your actual namespace.
+const ROLES_CLAIM_NAMESPACE = 'https://your-app-namespace.com/roles';
 
 interface AuthContextType {
-  user: User | null
-  profile: Profile | null
-  session: Session | null
-  loading: boolean
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
-  updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>
-  isAdmin: boolean
+  user: Auth0User | undefined;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signUp: (options?: { screen_hint: string }) => Promise<void>;
+  signIn: (options?: any) => Promise<void>; // Options can be AppState or RedirectLoginOptions
+  signOut: (options?: any) => Promise<void>; // Options can be LogoutOptions
+  resetPassword: () => void; // Simplified for now
+  isAdmin: boolean;
+  getAccessTokenSilently: (options?: any) => Promise<string>;
+  error?: Error;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        await createUserProfile(session.user)
-        await fetchProfile(session.user.id)
-      } else if (event === 'SIGNED_OUT') {
-        setProfile(null)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('Error fetching profile:', error)
-      } else {
-        setProfile(data)
-      }
-    } catch (error) {
-      console.error('Error in fetchProfile:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const createUserProfile = async (user: User) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email!,
-          full_name: user.user_metadata?.full_name || '',
-          role: 'user',
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-
-      if (error) {
-        console.error('Error creating user profile:', error)
-      }
-    } catch (error) {
-      console.error('Error in createUserProfile:', error)
-    }
-  }
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      })
-
-      return { error }
-    } catch (error) {
-      return { error: error as AuthError }
-    }
-  }
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      return { error }
-    } catch (error) {
-      return { error: error as AuthError }
-    }
-  }
-
-  const signOut = async () => {
-    try {
-      setLoading(true)
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Error signing out:', error)
-      } else {
-        // Clear local state immediately
-        setUser(null)
-        setProfile(null)
-        setSession(null)
-      }
-    } catch (error) {
-      console.error('Error in signOut:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const resetPassword = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-
-      return { error }
-    } catch (error) {
-      return { error: error as AuthError }
-    }
-  }
-
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) {
-      return { error: new Error('No user logged in') }
-    }
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-
-      if (error) {
-        return { error: new Error(error.message) }
-      }
-
-      // Update local profile state
-      setProfile(prev => prev ? { ...prev, ...updates } : null)
-      return { error: null }
-    } catch (error) {
-      return { error: error as Error }
-    }
-  }
-
-  const value = {
+  const {
     user,
-    profile,
-    session,
-    loading,
+    isAuthenticated,
+    isLoading,
+    loginWithRedirect,
+    logout,
+    getAccessTokenSilently,
+    error,
+  }: Auth0ContextInterface<Auth0User> = useAuth0<Auth0User>();
+
+  const signUp = async (options?: { screen_hint: string }) => {
+    await loginWithRedirect({
+      authorizationParams: {
+        screen_hint: options?.screen_hint || 'signup',
+      },
+    });
+  };
+
+  const signIn = async (options?: AppState) => {
+    await loginWithRedirect(options);
+  };
+
+  const signOut = async (options?: any) => { // LogoutOptions type is complex, using any for now
+    await logout({
+      logoutParams: { returnTo: window.location.origin },
+      ...options,
+    });
+  };
+
+  const resetPassword = () => {
+    // This typically involves redirecting to a page or using Auth0's Universal Login.
+    // For now, guide the user or trigger a redirect if your Auth0 setup supports it.
+    // Example: loginWithRedirect({ authorizationParams: { screen_hint: 'reset_password' } });
+    // Or, provide instructions to the user.
+    alert('Please use the password reset option on the login page.');
+  };
+
+  const isAdmin = React.useMemo(() => {
+    if (!user || !user[ROLES_CLAIM_NAMESPACE]) {
+      return false;
+    }
+    const roles = user[ROLES_CLAIM_NAMESPACE] as string[];
+    return roles.includes('admin');
+  }, [user]);
+
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    isAuthenticated,
     signUp,
     signIn,
     signOut,
     resetPassword,
-    updateProfile,
-    isAdmin: profile?.role === 'admin',
-  }
+    isAdmin,
+    getAccessTokenSilently,
+    error,
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
+  return context;
 }
