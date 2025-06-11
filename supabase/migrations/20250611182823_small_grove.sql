@@ -7,6 +7,7 @@
 */
 
 -- Add INSERT policy for authenticated users to create their own profile
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" 
 ON public.profiles 
 FOR INSERT 
