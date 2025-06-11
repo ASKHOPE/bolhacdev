@@ -2,20 +2,36 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+interface Profile {
+  id: string
+  email: string
+  full_name: string | null
+  role: 'admin' | 'user'
+  avatar_url: string | null
+  phone: string | null
+  bio: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface AuthContextType {
   user: User | null
+  profile: Profile | null
   session: Session | null
   loading: boolean
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -24,7 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
+      if (session?.user) {
+        fetchProfile(session.user.id)
+      } else {
+        setLoading(false)
+      }
     })
 
     // Listen for auth changes
@@ -33,16 +53,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
 
-      // Handle user profile creation
       if (event === 'SIGNED_IN' && session?.user) {
         await createUserProfile(session.user)
+        await fetchProfile(session.user.id)
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null)
+        setLoading(false)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching profile:', error)
+      } else {
+        setProfile(data)
+      }
+    } catch (error) {
+      console.error('Error in fetchProfile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const createUserProfile = async (user: User) => {
     try {
@@ -74,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/login?confirmed=true`
         },
       })
 
@@ -91,25 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       })
 
-      // Handle email not confirmed error gracefully
-      if (error?.message?.includes('Email not confirmed')) {
-        // Resend confirmation email
-        await supabase.auth.resend({
-          type: 'signup',
-          email: email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login?confirmed=true`
-          }
-        })
-        
-        return { 
-          error: {
-            ...error,
-            message: 'Please check your email and click the confirmation link. We\'ve sent you a new confirmation email.'
-          } as AuthError
-        }
-      }
-
       return { error }
     } catch (error) {
       return { error: error as AuthError }
@@ -117,9 +139,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Error signing out:', error)
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+      } else {
+        // Clear local state immediately
+        setUser(null)
+        setProfile(null)
+        setSession(null)
+      }
+    } catch (error) {
+      console.error('Error in signOut:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -135,14 +169,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) {
+      return { error: new Error('No user logged in') }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        return { error: new Error(error.message) }
+      }
+
+      // Update local profile state
+      setProfile(prev => prev ? { ...prev, ...updates } : null)
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
   const value = {
     user,
+    profile,
     session,
     loading,
     signUp,
     signIn,
     signOut,
     resetPassword,
+    updateProfile,
+    isAdmin: profile?.role === 'admin',
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

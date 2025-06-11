@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Heart, User, Settings, Sun, Moon, Monitor } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, X, Heart, User, Settings, Sun, Moon, Monitor, LogOut, ChevronDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, profile, signOut, isAdmin } = useAuth()
   const { theme, updateTheme } = useTheme()
   const { getSetting } = useSiteSettings()
@@ -39,6 +41,16 @@ export function Navbar() {
     const currentIndex = modes.indexOf(theme.mode)
     const nextIndex = (currentIndex + 1) % modes.length
     updateTheme({ mode: modes[nextIndex] })
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      setShowUserMenu(false)
+      navigate('/')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
   const ThemeIcon = getThemeIcon()
@@ -91,34 +103,52 @@ export function Navbar() {
               <ThemeIcon className="h-5 w-5" />
             </button>
             
-            {/* Admin Panel Link - Always visible for now */}
-            <Link
-              to="/admin"
-              className={`flex items-center space-x-1 px-3 py-2 rounded-theme text-sm font-medium transition-all duration-200 ${
-                location.pathname.startsWith('/admin')
-                  ? 'text-theme-primary bg-theme-surface shadow-sm'
-                  : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
-              }`}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Admin Panel</span>
-            </Link>
+            {/* Admin Panel Link */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`flex items-center space-x-1 px-3 py-2 rounded-theme text-sm font-medium transition-all duration-200 ${
+                  location.pathname.startsWith('/admin')
+                    ? 'text-theme-primary bg-theme-surface shadow-sm'
+                    : 'text-theme-text hover:text-theme-primary hover:bg-theme-surface'
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Admin Panel</span>
+              </Link>
+            )}
             
             {user ? (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/dashboard"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-theme text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-theme text-sm font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
                 >
                   <User className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <button
-                  onClick={signOut}
-                  className="px-4 py-2 rounded-theme text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 transform hover:scale-105"
-                >
-                  Sign Out
+                  <span>{profile?.full_name || 'User'}</span>
+                  <ChevronDown className="h-4 w-4" />
                 </button>
+                
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      <div className="flex items-center">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -178,16 +208,21 @@ export function Navbar() {
               ))}
               
               {/* Admin Panel Link - Mobile */}
-              <Link
-                to="/admin"
-                className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin Panel
-              </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin Panel
+                </Link>
+              )}
               
               {user ? (
                 <div className="space-y-1 pt-2 border-t border-theme-border">
+                  <div className="px-3 py-2 text-sm font-medium text-theme-text">
+                    Signed in as {profile?.full_name || profile?.email || 'User'}
+                  </div>
                   <Link
                     to="/dashboard"
                     className="block px-3 py-2 rounded-theme text-base font-medium text-theme-text hover:text-theme-primary hover:bg-theme-surface transition-all duration-200"
@@ -197,12 +232,15 @@ export function Navbar() {
                   </Link>
                   <button
                     onClick={() => {
-                      signOut()
+                      handleSignOut()
                       setIsOpen(false)
                     }}
                     className="block w-full text-left px-3 py-2 rounded-theme text-base font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
                   >
-                    Sign Out
+                    <div className="flex items-center">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </div>
                   </button>
                 </div>
               ) : (
